@@ -33,7 +33,6 @@ patchSize = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
 L1_weight  = 0.5
-nppi = 1 #number of patches per image
 
 # OPTIMIZATION PARAMETERS:
 maxEpoch   = 5
@@ -42,28 +41,34 @@ learnRate = 5000
 
 # LOGISTICS:
 USE_CUDA = True
-z = 'dictAtoms/da'
-q = '_'
+savePath = 'results/'
 
 #######################################################
 # (2) Set up data loader and train dictionary.
 #######################################################
 trainSet, testSet = loadData(dataset, patchSize, batchSize)
 
-savePath = 'dictAtoms/'+dataset+'_demoDict.png'
+atomImName = savePath + dataset + '_demoDict.png'
+
 print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
 print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
 Dict,LossHist,ErrHist,SpstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   codeLen, dataset,
+                                                  l1w = L1_weight,
                                                   batchSize = batchSize,
                                                   learnRate = learnRate,
                                                   useCUDA = USE_CUDA,
-                                                  imSaveName = savePath)
+                                                  imSaveName = atomImName)
 
 
 #######################################################
-# NOW RUN FISTA, SALSA WITH NEW DICTIONARY AS A TEST:
+# Visualize loss, reconstruction error, and sparsity
+#  histories.
 #######################################################
+
+############################################################
+# Now run FISTA with the new dictionary to test convergence.
+############################################################
 
 
 

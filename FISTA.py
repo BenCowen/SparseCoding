@@ -26,16 +26,14 @@ from torch.autograd import Variable
 from AUX.class_nonlinearity import soft_thresh
 from AUX.class_pArray import pArray
 
-def FISTA(y0,A,alpha,maxIter, options=pArray(False)):
-  if not hasattr(options,'exists'):
-      print('here')
-      options.returnCodes  = True
-      options.returnCost   = True
-      options.returnFidErr = False
+def FISTA(y0, A, alpha = 0.1, maxIter = 100,
+          returnCodes = True, returnCost = False, returnFidErr = True):
+
   if not hasattr(A,'maxEig'):
       A.getMaxEigVal()
   shrink = soft_thresh(alpha/A.maxEig,[], A.cuda)
-  returnTab = pArray()
+  returnTab = {}
+
   # INITIALIZE:
   yk    = Variable(torch.zeros(y0.size(0),A.n))
   xprev = Variable(torch.zeros(y0.size(0),A.n))
@@ -65,19 +63,19 @@ def FISTA(y0,A,alpha,maxIter, options=pArray(False)):
 
   # compute any updates desired: (cost hist, code est err, etc.)
    # comphistories(it,yk, params, options, returntab)
-    if options.returnCost:
+    if returnCost:
         cost[it] = float(fidErr.norm()**2 + alpha* yk.abs().sum())/y0.size(1)
 
   if maxIter == 0:
     yk = shrink( A.enc(y0) )
 
-  if options.returnCodes:
-      returnTab.codes = yk
-  if options.returnFidErr:
-      returnTab.fidErr = fidErr
-  if options.returnCost:
-      returnTab.costHist = cost.numpy()
-  #if options.timeTrials:
-     # returnTab.time = TIME
+  if returnCodes:
+      returnTab["codes"] = yk
+  if returnFidErr:
+      returnTab["fidErr"] = fidErr
+  if returnCost:
+      returnTab["costHist"] = cost.numpy()
+  #if timeTrials:
+     # returnTab["time"] = TIME
   return returnTab
   

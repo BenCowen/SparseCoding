@@ -48,10 +48,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                     **kwargs):
     
     # MISC SETUP
-    fistaOptions = pArray()
-    fistaOptions.returnCodes  = True
-    fistaOptions.returnCost   = False
-    fistaOptions.returnFidErr = True
+    fistaOptions = {"returnCodes"  : True,
+                    "returnCost"   : False,
+                    "returnFidErr" : True}
     
     # Recordbooks:
     LossHist  = np.zeros(maxEpoch)
@@ -100,10 +99,10 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
               Y = Variable(extractPatches(batch))
               
       ## CODE INFERENCE
-          fistaOut = FISTA(Y,Dict,l1w,fistaIters, fistaOptions)
+          fistaOut = FISTA(Y, Dict, l1w, fistaIters, fistaOptions)
 
-          X        = fistaOut.codes
-          residual = fistaOut.fidErr
+          X        = fistaOut["codes"]
+          residual = fistaOut["fidErr"]
           gc.collect()
          
      ## FORWARD PASS
