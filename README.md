@@ -1,3 +1,9 @@
+### TO-DO
+* remove super-dictionary stuff (simplify)
+* add back in the history visualizations
+* go thru all files for cleanup
+* add unit tests
+
 # Dictionary Learning
 This repository provides some basic experiments and tools for training a linear dictionary for image patches. The training process yields a dictionary which can be used along with a sparse code to represent a signal.
 This procedure is originally described in "Emergence of simple-cell receptive field properties by learning a sparse code for natural images", by Olshausen and Field [Nature, 381:607–609, 1996](https://www.nature.com/articles/381607a0).

@@ -24,7 +24,6 @@ Output:
 import torch
 from torch.autograd import Variable
 from AUX.class_nonlinearity import soft_thresh
-from AUX.class_pArray import pArray
 
 def FISTA(y0, A, alpha = 0.1, maxIter = 100,
           returnCodes = True, returnCost = False, returnFidErr = True):

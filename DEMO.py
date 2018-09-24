@@ -20,8 +20,6 @@ from loadImDat import loadData
 from DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
-# MISC
-from AUX.class_pArray import pArray
 
 #######################################################
 # (1) Define experiment.

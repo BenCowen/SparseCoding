@@ -30,7 +30,6 @@ import matplotlib.pyplot as plt
 from fcn_patchExtract import extractPatches
 # MISC
 from AUX.class_nonlinearity import soft_thresh
-from AUX.class_pArray import pArray
 import gc
   
 
