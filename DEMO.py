@@ -31,12 +31,12 @@ dataset    = "MNIST"
 patchSize = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weight  = 0.5
+L1_weight  = 1
 
 # OPTIMIZATION PARAMETERS:
-maxEpoch   = 5
+maxEpoch   = 2
 batchSize = 1e2
-learnRate = 5e3
+learnRate = 6e3
 
 # LOGISTICS:
 USE_CUDA = True
@@ -47,52 +47,20 @@ savePath = 'results/'
 #######################################################
 trainSet, testSet = loadData(dataset, patchSize, batchSize)
 
-atomImName = savePath + dataset + str(patchSize) + '_demoDict.png'
+atomImName = dataset + str(patchSize) + '_demoDict'
 
 print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
 print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
-Dict,LossHist,ErrHist,SpstyHist = trainDictionary(trainSet, testSet, sigLen,
+Dict,lossHist,errHist,spstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   codeLen, dataset,
                                                   maxEpoch = maxEpoch,
                                                   l1w = L1_weight,
                                                   batchSize = batchSize,
                                                   learnRate = learnRate,
                                                   useCUDA = USE_CUDA,
-                                                  imSaveName = atomImName)
+                                                  imSavePath = savePath,
+                                                  daSaveName = atomImName)
 print("done!")
-
-#######################################################
-# Visualize loss, reconstruction error, and sparsity
-#  histories.
-#######################################################
-x = np.asarray([i for i in range(0, len(LossHist))])
-################
-## loss history
-plt.figure(1)
-plt.plot(x, LossHist)
-plt.xlabel("Batches")
-plt.ylabel("Loss (averaged over samples)")
-plt.title("Loss Function History")
-plt.savefig("results/lossHist.png")
-
-################################
-## reconstruction error history
-plt.figure(2)
-plt.plot(x, ErrHist)
-plt.xlabel("Batches")
-plt.ylabel("MSE")
-plt.title("Reconstruction Error History")
-plt.savefig("results/reconErrHist.png")
-
-####################
-## sparsity history
-plt.figure(3)
-plt.plot(x, SpstyHist)
-plt.xlabel("Batches")
-plt.ylabel("% zeros")
-plt.title("Sparsity History")
-plt.savefig("results/sparsityHist.png")
-
 
 
 ############################################################

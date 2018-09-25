@@ -26,6 +26,7 @@ from AUX.class_l1penalty import L1Penalty
 from FISTA import FISTA
 # PLOTTING
 import matplotlib.pyplot as plt
+from writeProgressFigs import printProgressFigs
 # DATA
 from fcn_patchExtract import extractPatches
 # MISC
@@ -41,7 +42,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                     useL1Loss = True,
                     l1w = 0.5,
                     useCUDA = False,
-                    imSaveName = "dictAtoms.png",
+                    imSavePath = "./",
+                    daSaveName = "dictAtoms",  #TODO: change these to kwargs otherwise enter the whole savepath and do something generic for other plots. or ONLY enter savePath and datName.
+                    extension = ".png",
                     printFreq = 10,
                     saveFreq  = 100,
                     **kwargs):
@@ -52,9 +55,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                     "returnFidErr" : True}
     
     # Recordbooks:
-    LossHist  = []
-    ErrHist   = []
-    SpstyHist = []
+    lossHist  = []
+    errHist   = []
+    spstyHist = []
     
     # INITIALIZE DICTIONARY
     Dict = dictionary(codeLen, sigLen, datName, useCUDA)
@@ -124,15 +127,15 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
      ## Housekeeping
           sample_loss      = (rec_err+l1w*spsty_er).data[0]
           epoch_loss      +=   sample_loss
-          LossHist.append(  epoch_loss/numBatch )
+          lossHist.append(  epoch_loss/numBatch )
           
           sample_rec_error = rec_err.data[0]
           epoch_rec_error += sample_rec_error
-          ErrHist.append( epoch_rec_error/numBatch )
+          errHist.append( epoch_rec_error/numBatch )
 
           sample_sparsity = ((X.data==0).sum())/X.numel()
           epoch_sparsity  +=  sample_sparsity
-          SpstyHist.append( epoch_sparsity/ numBatch )
+          spstyHist.append( epoch_sparsity/ numBatch )
 
      ## Print stuff.
      # You may wish to print some figures here too. See bottom of page.
@@ -144,7 +147,8 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                      sample_loss,sample_rec_error,sample_sparsity))
           
           if batch_idx % saveFreq == 0:
-              Dict.printAtomImage(imSaveName)
+              Dict.printAtomImage(imSavePath + daSaveName + extension)
+              printProgressFigs(imSavePath, extension, lossHist, errHist, spstyHist)
       ## end "TRAINING" batch-loop
 #================================================
     
@@ -153,9 +157,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
         epoch_avg_recErr   = epoch_rec_error/numBatch
         epoch_avg_sparsity = epoch_sparsity/numBatch
     
-#        LossHist[it]  = epoch_average_loss
-#        ErrHist[it]   = epoch_avg_recErr
-#        SpstyHist[it] = epoch_avg_sparsity
+#        lossHist[it]  = epoch_average_loss
+#        errHist[it]   = epoch_avg_recErr
+#        spstyHist[it] = epoch_avg_sparsity
         
         print('- - - - - - - - - - - - - - - - - - - - -')
         print('EPOCH ', it + 1,'/',maxEpoch, " STATS")
@@ -166,14 +170,15 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
   ## end "EPOCH" loop
 
     # Convert recordbooks to numpy arrays:
-    LossHist  = np.asarray(LossHist)
-    ErrHist   = np.asarray(ErrHist)
-    SpstyHist = np.asarray(SpstyHist)
+    lossHist  = np.asarray(lossHist)
+    errHist   = np.asarray(errHist)
+    spstyHist = np.asarray(spstyHist)
 
     # Save the dictionary/decoder:
 #    torch.save(save_dir..'decoder_'..datName..'psz'..pSz..'op'..outPlane..'.t7', decoder) 
-    Dict.printAtomImage(imSaveName)
-    return Dict,LossHist,ErrHist,SpstyHist
+    Dict.printAtomImage(imSavePath + daSaveName + extension)
+    printProgressFigs(imSavePath, extension, lossHist, errHist, spstyHist)
+    return Dict,lossHist,errHist,spstyHist
 
 ##########################################
 ## Plotting examples.

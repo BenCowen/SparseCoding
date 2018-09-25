@@ -28,12 +28,12 @@ dataset    = "MNIST"
 patchSize  = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weightList  = [.1, 0.5, 1]
+L1_weightList  = [.4, 0.5, 0.74]
 
 # OPTIMIZATION PARAMETERS:
 maxEpoch   = 5
-batchSizeList = [100, 1000]
-learnRateList = [5e-1, 1, 5, 5e2, 5e3]
+batchSizeList = [100]
+learnRateList = [6e3, 6.2e3, 6.4e3, 6.6e3, 6.8e3, ]
 LRDecayList = [1, 0.999, 0.9]
 
 # LOGISTICS:
@@ -59,7 +59,7 @@ for j,bsz in  enumerate(batchSizeList):
         paramID = str(i) + str(j) + str(k) + str(l)
         print("Training " + dataset + " dictionary with parameter set " + paramID)
         print("(" + str(count) + "/" + str(total) + ")")
-        atomImName = savePath + dataset + str(patchSize) + '_' + paramID + '.png'
+        atomImName = dataset + str(patchSize) + '_' + paramID
         Dict,LossHist,ErrHist,SpstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   codeLen, dataset,
                                                   maxEpoch = maxEpoch,
@@ -72,7 +72,8 @@ for j,bsz in  enumerate(batchSizeList):
                                                   batchSize = bsz,
                                                   learnRate = lr,
                                                   learnRateDecay = lrd,
-                                                  imSaveName = atomImName)
+                                                  imSavePath = savePath,
+                                                  daSaveName = atomImName)
 
 
 
