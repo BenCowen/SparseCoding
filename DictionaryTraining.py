@@ -122,7 +122,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           del Dict.maxEig
          
      ## Housekeeping
-          sample_loss = residual.pow(2).sum() + l1w*X.norm(1)
+          sample_loss      = (residual.pow(2).sum() + l1w*X.norm(1)) / X.size(1)
           epoch_loss      +=   sample_loss.data[0]
           
           sample_rec_error = residual.pow(2).sum(1).sqrt().mean()
@@ -166,8 +166,8 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
         SpstyHist[it] = epoch_avg_sparsity
         
         print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
-        print('EPOCH = ',it+1,'/',maxEpoch)
-        print('LOSS = ',epoch_average_loss)
+        print('EPOCH ', it + 1,'/',maxEpoch, " STATS")
+        print('LOSS = ', epoch_average_loss)
         print('RECON ERR = ',epoch_avg_recErr)
         print('SPARSITY = ',epoch_avg_sparsity)
   ## end "EPOCH" loop
