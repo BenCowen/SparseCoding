@@ -52,9 +52,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                     "returnFidErr" : True}
     
     # Recordbooks:
-    LossHist  = np.zeros(maxEpoch)
-    ErrHist   = np.zeros(maxEpoch)
-    SpstyHist = np.zeros(maxEpoch)
+    LossHist  = []
+    ErrHist   = []
+    SpstyHist = []
     
     # INITIALIZE DICTIONARY
     Dict = dictionary(codeLen, sigLen, datName, useCUDA)
@@ -101,7 +101,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           fistaOut = FISTA(Y, Dict, l1w, fistaIters, fistaOptions)
 
           X        = fistaOut["codes"]
-          residual = fistaOut["fidErr"]
+#          residual = fistaOut["fidErr"]
           gc.collect()
          
      ## FORWARD PASS
@@ -122,34 +122,26 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           del Dict.maxEig
          
      ## Housekeeping
-          sample_loss      = (residual.pow(2).sum() + l1w*X.norm(1)) / X.size(1)
-          epoch_loss      +=   sample_loss.data[0]
+          sample_loss      = (rec_err+l1w*spsty_er).data[0]
+          epoch_loss      +=   sample_loss
+          LossHist.append(  epoch_loss/numBatch )
           
-          sample_rec_error = residual.pow(2).sum(1).sqrt().mean()
-          epoch_rec_error += sample_rec_error.data[0]
-          
+          sample_rec_error = rec_err.data[0]
+          epoch_rec_error += sample_rec_error
+          ErrHist.append( epoch_rec_error/numBatch )
+
           sample_sparsity = ((X.data==0).sum())/X.numel()
           epoch_sparsity  +=  sample_sparsity
-          
+          SpstyHist.append( epoch_sparsity/ numBatch )
+
+     ## Print stuff.
+     # You may wish to print some figures here too. See bottom of page.
           if batch_idx % printFreq == 0:
-    # PLOT FISTA COST FUNCTION HISTORY
-#              plt.plot(fistaOut.costHist)
-#              plt.xlabel('Iterations')
-#              plt.ylabel('Cost (averaged over samples)')
-#              plt.title('Cost Function History')
-#              plt.show()
-    # PLOT CODE EXAMPLE
-#              plt.plot(np.array(X.data[5]))
-#              plt.title('Code visualization')
-#              plt.show()
               print('Train Epoch: {} [{}/{} ({:.0f}%)]'.format(
                 it, batch_idx * len(batch), len(train_loader.dataset),
                 100* batch_idx / len(train_loader)))
-              tmp0 = (rec_err+l1w*spsty_er).data[0]
-              tmp1 = epoch_rec_error/(batch_idx+1)
-              tmp2 = epoch_sparsity/(batch_idx+1)
               print('Loss: {:.6f} \tRecon Err: {:.6f} \tSparsity: {:.6f} '.format(
-                     tmp0,tmp1,tmp2))
+                     sample_loss,sample_rec_error,sample_sparsity))
           
           if batch_idx % saveFreq == 0:
               Dict.printAtomImage(imSaveName)
@@ -161,21 +153,39 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
         epoch_avg_recErr   = epoch_rec_error/numBatch
         epoch_avg_sparsity = epoch_sparsity/numBatch
     
-        LossHist[it]  = epoch_average_loss
-        ErrHist[it]   = epoch_avg_recErr
-        SpstyHist[it] = epoch_avg_sparsity
+#        LossHist[it]  = epoch_average_loss
+#        ErrHist[it]   = epoch_avg_recErr
+#        SpstyHist[it] = epoch_avg_sparsity
         
-        print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+        print('- - - - - - - - - - - - - - - - - - - - -')
         print('EPOCH ', it + 1,'/',maxEpoch, " STATS")
         print('LOSS = ', epoch_average_loss)
         print('RECON ERR = ',epoch_avg_recErr)
         print('SPARSITY = ',epoch_avg_sparsity)
+        print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
   ## end "EPOCH" loop
-    
-    
+
+    # Convert recordbooks to numpy arrays:
+    LossHist  = np.asarray(LossHist)
+    ErrHist   = np.asarray(ErrHist)
+    SpstyHist = np.asarray(SpstyHist)
+
+    # Save the dictionary/decoder:
 #    torch.save(save_dir..'decoder_'..datName..'psz'..pSz..'op'..outPlane..'.t7', decoder) 
     Dict.printAtomImage(imSaveName)
     return Dict,LossHist,ErrHist,SpstyHist
-    
-    
-    
+
+##########################################
+## Plotting examples.
+#-------------------
+    # PLOT FISTA COST FUNCTION HISTORY
+#              plt.plot(fistaOut.costHist)
+#              plt.xlabel('Iterations')
+#              plt.ylabel('Cost (averaged over samples)')
+#              plt.title('Cost Function History')
+#              plt.show()
+    # PLOT CODE EXAMPLE
+#              plt.plot(np.array(X.data[5]))
+#              plt.title('Code visualization')
+#              plt.show()
+##########################################

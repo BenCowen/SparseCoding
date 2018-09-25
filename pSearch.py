@@ -59,7 +59,7 @@ for j,bsz in  enumerate(batchSizeList):
         paramID = str(i) + str(j) + str(k) + str(l)
         print("Training " + dataset + " dictionary with parameter set " + paramID)
         print("(" + str(count) + "/" + str(total) + ")")
-        atomImName = savePath + dataset + '_' + paramID + '.png'
+        atomImName = savePath + dataset + str(patchSize) + '_' + paramID + '.png'
         Dict,LossHist,ErrHist,SpstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   codeLen, dataset,
                                                   maxEpoch = maxEpoch,

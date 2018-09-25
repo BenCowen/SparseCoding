@@ -106,7 +106,7 @@ def fixBsz(bsz,nppi):
     """
     if bsz<1:
         bsz = 1
-    return bsz
+    return int(bsz)
 
 ##################################################################
 ## LOAD DATA (uses above classes)

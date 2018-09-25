@@ -1,8 +1,6 @@
 ### TO-DO
-* remove super-dictionary stuff (simplify)
-* add back in the history visualizations
 * go thru all files for cleanup
-* add unit tests
+* perform parameter search for each dataset so good dictionaries can be obtained repeatably
 
 # Dictionary Learning
 This repository provides some basic experiments and tools for training a linear dictionary for image patches. The training process yields a dictionary which can be used along with a sparse code to represent a signal.
