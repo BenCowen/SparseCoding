@@ -28,13 +28,14 @@ import matplotlib.pyplot as plt
 #######################################################
 # Cost function parameters.
 dataset    = "MNIST"
-patchSize = 32
+patchSize  = 32
+datName    = dataset + str(patchSize)
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
 L1_weight  = 1
 
 # OPTIMIZATION PARAMETERS:
-maxEpoch   = 2
+maxEpoch  = 10
 batchSize = 1e2
 learnRate = 6e3
 
@@ -52,7 +53,7 @@ atomImName = dataset + str(patchSize) + '_demoDict'
 print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
 print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
 Dict,lossHist,errHist,spstyHist = trainDictionary(trainSet, testSet, sigLen,
-                                                  codeLen, dataset,
+                                                  codeLen, datName,
                                                   maxEpoch = maxEpoch,
                                                   l1w = L1_weight,
                                                   batchSize = batchSize,

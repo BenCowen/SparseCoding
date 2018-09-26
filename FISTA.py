@@ -26,7 +26,7 @@ from torch.autograd import Variable
 from AUX.class_nonlinearity import soft_thresh
 
 def FISTA(y0, A, alpha = 0.1, maxIter = 100,
-          returnCodes = True, returnCost = False, returnFidErr = True):
+          returnCodes = True, returnCost = False, returnFidErr = False):
 
   if not hasattr(A,'maxEig'):
       A.getMaxEigVal()

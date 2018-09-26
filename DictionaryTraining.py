@@ -37,23 +37,59 @@ import gc
 def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                     maxEpoch = 2,
                     learnRate = 1,
+		                lrdFreq   = 30,
                     learnRateDecay = 1,
                     fistaIters = 50,
                     useL1Loss = True,
                     l1w = 0.5,
                     useCUDA = False,
+		                imSave = True,
                     imSavePath = "./",
-                    daSaveName = "dictAtoms",  #TODO: change these to kwargs otherwise enter the whole savepath and do something generic for other plots. or ONLY enter savePath and datName.
                     extension = ".png",
                     printFreq = 10,
                     saveFreq  = 100,
                     **kwargs):
+    """
+    Inputs:
+      maxEpoch : number of training epochs (1 epoch = run thru all data)
+      learnRate : weight multiplied onto gradient update
+      lrdFreq : number of batches between learnRate scaling
+      learnRateDecay: scales learnRate every lrdFreq batches, i.e.
+        epoch_LR = learnRate*(learnRateDecay**(epoch-1))
+      fistaIters : number of iterations to run FISTA when generating epoch codes
+      useL1Loss : set to false to forget sparsity requirement (or set l1w=0)
+      l1w : the L1-norm weight, balances data fidelity with sparsity
+      useCUDA : set to true for GPU acceleration
+      imSave : boolean determines whether to save images
+      dataset : name of the dataset (used in saved image files)
+      imSavePath : directory in which multiple images will be saved
+      extension : type of image to save (e.g. ".png", ".pdf")
+      printFreq : the number of batches between print statements during training
+      saveFreq : the number of batches between image saves during training
+      kwargs: optional arguments
+	      atomImName : name for dictionary atom image other than "dictAtoms"
+	      dictInitWeights: initial weights (instead of normal distribution)
+    Outputs:
+      Dict: the trained dictionary / decoder
+      lossHist : loss function history (per batch)
+      errHist : reconstruction error history (per batch)
+      spstyHist : sparsity history (per batch). i.e. the percent zeros
+          achieved during encoding with the dictionary. Encoding is
+          performed using FISTA.
+    """
+
     
     # MISC SETUP
     fistaOptions = {"returnCodes"  : True,
                     "returnCost"   : False,
-                    "returnFidErr" : True}
-    
+                    "returnFidErr" : False}
+
+    if "atomImName" in kwargs:
+        dictAtoms = kwargs["atomImName"]
+    else:
+        dictAtoms = "dictAtoms"
+    dictAtomImgName = imSavePath + datName + "_" + dictAtoms + extension
+
     # Recordbooks:
     lossHist  = []
     errHist   = []
@@ -77,19 +113,20 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
         loss.size_average=True
         
     # Optimizer
-    SGD = torch.optim.SGD(Dict.parameters(), lr=learnRate)
-  
+    OPT = torch.optim.SGD(Dict.parameters(), lr=learnRate)
+    # For learning rate decay
+    scheduler = torch.optim.lr_scheduler.StepLR(OPT, step_size = lrdFreq,
+                                                gamma = learnRateDecay)
 ###########################
 ### DICTIONARY LEARNING ###
 ###########################
     for it in range(maxEpoch):
-        epoch_LR        = learnRate*(learnRateDecay**(it-1))
         epoch_loss      = 0
         epoch_sparsity  = 0
         epoch_rec_error = 0
     
 #================================================
-    ## TRAINING
+    # TRAINING
         numBatch = 0
         for batch_idx, (batch, labels) in enumerate(train_loader):
           gc.collect()
@@ -104,10 +141,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           fistaOut = FISTA(Y, Dict, l1w, fistaIters, fistaOptions)
 
           X        = fistaOut["codes"]
-#          residual = fistaOut["fidErr"]
           gc.collect()
          
-     ## FORWARD PASS
+      ## FORWARD PASS
           Y_est     = Dict.forward(X)   #try decoding the optimal codes
           
           if useL1Loss:
@@ -117,17 +153,18 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
               rec_err   = loss(Y_est,Y)
               spsty_er  = 0
          
-     ## BACKWARD PASS
+      ## BACKWARD PASS
           (rec_err+l1w*spsty_er).backward()
-          SGD.step()
+          OPT.step()
+          scheduler.step()
           Dict.zero_grad()
           Dict.normalizeAtoms()
           del Dict.maxEig
          
-     ## Housekeeping
+      ## Housekeeping
           sample_loss      = (rec_err+l1w*spsty_er).data[0]
           epoch_loss      +=   sample_loss
-          lossHist.append(  epoch_loss/numBatch )
+          lossHist.append( epoch_loss/numBatch )
           
           sample_rec_error = rec_err.data[0]
           epoch_rec_error += sample_rec_error
@@ -147,8 +184,9 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                      sample_loss,sample_rec_error,sample_sparsity))
           
           if batch_idx % saveFreq == 0:
-              Dict.printAtomImage(imSavePath + daSaveName + extension)
+              Dict.printAtomImage(dictAtomImgName)
               printProgressFigs(imSavePath, extension, lossHist, errHist, spstyHist)
+
       ## end "TRAINING" batch-loop
 #================================================
     
@@ -176,7 +214,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
 
     # Save the dictionary/decoder:
 #    torch.save(save_dir..'decoder_'..datName..'psz'..pSz..'op'..outPlane..'.t7', decoder) 
-    Dict.printAtomImage(imSavePath + daSaveName + extension)
+    Dict.printAtomImage(dictAtomImgName)
     printProgressFigs(imSavePath, extension, lossHist, errHist, spstyHist)
     return Dict,lossHist,errHist,spstyHist
 

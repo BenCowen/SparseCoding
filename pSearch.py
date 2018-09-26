@@ -28,13 +28,13 @@ dataset    = "MNIST"
 patchSize  = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weightList  = [.4, 0.5, 0.74]
+L1_weightList  = [.5, 0.723]
 
 # OPTIMIZATION PARAMETERS:
-maxEpoch   = 5
+maxEpoch   = 50
 batchSizeList = [100]
-learnRateList = [6e3, 6.2e3, 6.4e3, 6.6e3, 6.8e3, ]
-LRDecayList = [1, 0.999, 0.9]
+learnRateList = [6.2e3, 6.6e3]
+LRDecayList = [0.999,.9]
 
 # LOGISTICS:
 USE_CUDA = True
@@ -50,9 +50,9 @@ print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
 count = 0;
 total = len(batchSizeList) * len(L1_weightList) * len(learnRateList) * len(LRDecayList)
 
-for j,bsz in  enumerate(batchSizeList):
+for i,bsz in  enumerate(batchSizeList):
   trainSet, testSet = loadData(dataset, patchSize, bsz)
-  for i,l1w in enumerate(L1_weightList):
+  for j,l1w in enumerate(L1_weightList):
     for k,lr in enumerate(learnRateList):
       for l, lrd in enumerate(LRDecayList):
         count += 1
@@ -64,7 +64,7 @@ for j,bsz in  enumerate(batchSizeList):
                                                   codeLen, dataset,
                                                   maxEpoch = maxEpoch,
                                                   useCUDA = USE_CUDA,
-                                                  fistaIters = 100,
+                                                  fistaIters = 65,
                                                   printFreq = 100,
                                                   saveFreq = 100,
                                                   # looped parameters:
@@ -73,7 +73,7 @@ for j,bsz in  enumerate(batchSizeList):
                                                   learnRate = lr,
                                                   learnRateDecay = lrd,
                                                   imSavePath = savePath,
-                                                  daSaveName = atomImName)
+                                                  atomImName = atomImName)
 
 
 
