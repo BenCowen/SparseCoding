@@ -96,7 +96,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
     spstyHist = []
     
     # INITIALIZE DICTIONARY
-    Dict = dictionary(codeLen, sigLen, datName, useCUDA)
+    Dict = dictionary(sigLen, codeLen, datName, useCUDA)
     if "dictInitWeights" in kwargs:
         Dict.setWeights(dictInitWeights)
     Dict.normalizeAtoms()

@@ -36,7 +36,7 @@ L1_weight  = 0.2
 
 # Optimization parameters.
 maxEpoch  = 10
-batchSize = 1e2
+batchSize = 10
 learnRate = 2e2
 learnRateDecay = 0.999
 fistaIters = 200

@@ -25,29 +25,29 @@ import torch
 from torch.autograd import Variable
 from AUX.class_nonlinearity import soft_thresh
 
-def FISTA(y0, A, alpha = 0.1, maxIter = 100,
-          returnCodes = True, returnCost = False, returnFidErr = False):
-
+def FISTA(y0, A, alpha, maxIter,
+          returnCodes = True, returnCost = False, returnResidual = False):
   if not hasattr(A,'maxEig'):
       A.getMaxEigVal()
   shrink = soft_thresh(alpha/A.maxEig,[], A.cuda)
   returnTab = {}
 
   # INITIALIZE:
-  yk    = Variable(torch.zeros(y0.size(0),A.n))
-  xprev = Variable(torch.zeros(y0.size(0),A.n))
-  if A.cuda:
+  batchSize = y0.size(0)
+  yk        = Variable(torch.zeros(y0.size()))
+  xprev     = Variable(torch.zeros(y0.size()))
+  if A.use_cuda:
       yk    = yk.cuda()
       xprev = xprev.cuda()
   t     = 1
-  fidErr = A.dec(yk) - y0;
+  residual = A.forward(yk) - y0;
   
   # TMP:
   cost = torch.zeros(maxIter)
   
   for it in range(0, maxIter):
   #ista step:
-    tmp = yk - A.enc(fidErr)/A.maxEig 
+    tmp = yk - A.encode(residual)/A.maxEig 
     xk  = shrink.forward(tmp)
     
   #fista stepsize update:
@@ -56,24 +56,27 @@ def FISTA(y0, A, alpha = 0.1, maxIter = 100,
     yk    = xk + (xk-xprev)*fact
     
   #copies for next iter 
-    xprev  = xk;
-    t      = tnext
-    fidErr = A.dec(yk) - y0
+    xprev    = xk;
+    t        = tnext
+    residual = A.forward(yk) - y0
 
   # compute any updates desired: (cost hist, code est err, etc.)
    # comphistories(it,yk, params, options, returntab)
     if returnCost:
-        cost[it] = float(fidErr.norm()**2 + alpha* yk.abs().sum())/y0.size(1)
+        fidErr = residual.data[0].norm()**2
+        L1err = yk.data[0].abs().sum()
+        cost[it] = float(fidErr + alpha * L1err)/batchSize
 
   if maxIter == 0:
     yk = shrink( A.enc(y0) )
 
   if returnCodes:
       returnTab["codes"] = yk
-  if returnFidErr:
-      returnTab["fidErr"] = fidErr
+  if returnResidual:
+      returnTab["residual"] = residual
   if returnCost:
       returnTab["costHist"] = cost.numpy()
+  #TODO: time it!
   #if timeTrials:
      # returnTab["time"] = TIME
   return returnTab
