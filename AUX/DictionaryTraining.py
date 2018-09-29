@@ -23,12 +23,12 @@ from AUX.class_dict import dictionary
 # L1 LOSS/PENALTY
 from AUX.class_l1penalty import L1Penalty
 # ALGORITHMS
-from FISTA import FISTA
+from AUX.FISTA import FISTA
 # PLOTTING
 import matplotlib.pyplot as plt
-from writeProgressFigs import printProgressFigs
+from AUX.writeProgressFigs import printProgressFigs
 # DATA
-from fcn_patchExtract import extractPatches
+from AUX.fcn_patchExtract import extractPatches
 # MISC
 from AUX.class_nonlinearity import soft_thresh
 import gc
@@ -87,8 +87,8 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
     if "atomImName" in kwargs:
         dictAtoms = kwargs["atomImName"]
     else:
-        dictAtoms = "dictAtoms"
-    dictAtomImgName = imSavePath + datName + "_" + dictAtoms + extension
+        dictAtoms = datName + "dictAtoms"
+    dictAtomImgName = imSavePath + dictAtoms + extension
 
     # Recordbooks:
     lossHist  = []

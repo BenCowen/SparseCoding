@@ -13,9 +13,9 @@ parameters.
 # (0) Import modules.
 #######################################################
 # DATA
-from loadImDat import loadData
+from DATA.loadImDat import loadData
 # TRAINING
-from DictionaryTraining import trainDictionary
+from AUX.DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
 
@@ -28,17 +28,17 @@ dataset    = "MNIST"
 patchSize  = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weightList  = [.5, 0.723]
+L1_weightList  = [.5, 0.723, 1]
 
 # OPTIMIZATION PARAMETERS:
 maxEpoch   = 50
 batchSizeList = [100]
-learnRateList = [6.2e3, 6.6e3]
-LRDecayList = [0.999,.9]
+learnRateList = [.1, 1, 10, 100, 1000]
+LRDecayList = [0.99, .9, .8]
 
 # LOGISTICS:
 USE_CUDA = True
-savePath = 'parameterSearch/'
+savePath = 'paramSearchResults/'
 
 #######################################################
 # (2) Set up data loader and train dictionary.

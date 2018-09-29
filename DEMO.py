@@ -16,9 +16,9 @@ After (0) importing modules we (1) designate training and data
 #######################################################
 import numpy as np
 # DATA
-from loadImDat import loadData
+from DATA.loadImDat import loadData
 # TRAINING
-from DictionaryTraining import trainDictionary
+from AUX.DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
 
@@ -28,18 +28,20 @@ import matplotlib.pyplot as plt
 #######################################################
 # Cost function parameters.
 dataset    = "MNIST"
-patchSize  = 32
+patchSize  = 10
 datName    = dataset + str(patchSize)
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weight  = 1
+L1_weight  = 0.2
 
-# OPTIMIZATION PARAMETERS:
+# Optimization parameters.
 maxEpoch  = 10
 batchSize = 1e2
-learnRate = 6e3
+learnRate = 2e2
+learnRateDecay = 0.999
+fistaIters = 200
 
-# LOGISTICS:
+# Logistics.
 USE_CUDA = True
 savePath = 'results/'
 
@@ -55,9 +57,11 @@ print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
 Dict,lossHist,errHist,spstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   codeLen, datName,
                                                   maxEpoch = maxEpoch,
+                                                  fistaIters =fistaIters,
                                                   l1w = L1_weight,
                                                   batchSize = batchSize,
                                                   learnRate = learnRate,
+                                                  learnRateDecay = learnRateDecay,
                                                   useCUDA = USE_CUDA,
                                                   imSavePath = savePath,
                                                   daSaveName = atomImName)
