@@ -67,14 +67,11 @@ Dict,lossHist,errHist,spstyHist = trainDictionary(trainSet, testSet, sigLen,
                                                   daSaveName = atomImName)
 print("done!")
 
-
-############################################################
-# Now run FISTA with the new dictionary to test convergence.
-############################################################
-
-
-
-
+# TODO: actually look up how to save "this" file etc.
+dictSavePath = "trainedModels/" + dataset + str(patchSize) + "/"
+# save model
+# save convergence / training progress plots and dict atoms
+# save the file used to create it all (i.e. this one)
 
 #benjamin@anna-devbox02:~/LSALSApy$ CUDA_VISIBLE_DEVICES=3 python dict_pTest0.py
 
