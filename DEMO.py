@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 #######################################################
 # Cost function parameters.
 dataset    = "MNIST"
-patchSize  = 10
+patchSize  = 32
 datName    = dataset + str(patchSize)
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"

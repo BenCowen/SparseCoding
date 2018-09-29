@@ -37,9 +37,9 @@ class dictionary(nn.Module):
     def __init__(self, out_size, in_size, datName, use_cuda):
         super(dictionary, self).__init__()
         if use_cuda:
-            self.atoms = nn.Linear(in_size, out_size,False).cuda()
+            self.atoms = nn.Linear(in_size, out_size, bias = False).cuda()
         else:
-            self.atoms = nn.Linear(in_size, out_size,False)
+            self.atoms = nn.Linear(in_size, out_size, bias = False)
         self.m = out_size
         self.n = in_size
         self.datName = datName

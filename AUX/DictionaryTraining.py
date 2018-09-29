@@ -20,8 +20,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 # DICTIONARY
 from AUX.class_dict import dictionary
-# L1 LOSS/PENALTY
-from AUX.class_l1penalty import L1Penalty
 # ALGORITHMS
 from AUX.FISTA import FISTA
 # PLOTTING
@@ -40,7 +38,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
 		                lrdFreq   = 30,
                     learnRateDecay = 1,
                     fistaIters = 50,
-                    useL1Loss = True,
+                    useL1Loss = False,
                     l1w = 0.5,
                     useCUDA = False,
 		                imSave = True,
@@ -80,10 +78,11 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
 
     
     # MISC SETUP
+    # FISTA:
     fistaOptions = {"returnCodes"  : True,
                     "returnCost"   : False,
                     "returnFidErr" : False}
-
+    # Saving dictionary atom images:
     if "atomImName" in kwargs:
         dictAtoms = kwargs["atomImName"]
     else:
@@ -103,15 +102,13 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
     Dict.zero_grad()
     
     # Loss Function:  .5 ||y-Ax||_2^2 + alpha||x||_1
+    mseLoss = nn.MSELoss()
+    mseLoss.size_average=True
     if useL1Loss:
-        loss1 = nn.MSELoss()
-        loss1.size_average=True
-        loss2 = L1Penalty()
-        loss2.size_average=True
+      l1Loss = Variable( torch.FloatTensor(1), requires_grad=True)
     else:
-        loss = nn.MSELoss()
-        loss.size_average=True
-        
+      l1Loss = 0
+
     # Optimizer
     OPT = torch.optim.SGD(Dict.parameters(), lr=learnRate)
     # For learning rate decay
@@ -121,7 +118,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
 ### DICTIONARY LEARNING ###
 ###########################
     for it in range(maxEpoch):
-        epoch_loss      = 0
+        epochLoss      = 0
         epoch_sparsity  = 0
         epoch_rec_error = 0
     
@@ -139,22 +136,20 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
               
       ## CODE INFERENCE
           fistaOut = FISTA(Y, Dict, l1w, fistaIters, fistaOptions)
-
-          X        = fistaOut["codes"]
+          X = fistaOut["codes"]
           gc.collect()
          
       ## FORWARD PASS
           Y_est     = Dict.forward(X)   #try decoding the optimal codes
           
+          # loss
+          reconErr   = mseLoss(Y_est,Y)
           if useL1Loss:
-              rec_err   = loss1(Y_est,Y)
-              spsty_er  = loss2(Y_est)
-          else:
-              rec_err   = loss(Y_est,Y)
-              spsty_er  = 0
+              l1Loss  = Y_est.norm(1)/ (X.size(0) * X.size(1) )
          
       ## BACKWARD PASS
-          (rec_err+l1w*spsty_er).backward()
+          batchLoss = reconErr + l1w * l1Loss # need to divide by batchsize here?
+          batchLoss.backward()
           OPT.step()
           scheduler.step()
           Dict.zero_grad()
@@ -162,11 +157,11 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           del Dict.maxEig
          
       ## Housekeeping
-          sample_loss      = (rec_err+l1w*spsty_er).data[0]
-          epoch_loss      +=   sample_loss
-          lossHist.append( epoch_loss/numBatch )
+          sampleLoss      = batchLoss.data[0]
+          epochLoss      +=   sampleLoss
+          lossHist.append( epochLoss/numBatch )
           
-          sample_rec_error = rec_err.data[0]
+          sample_rec_error = reconErr.data[0]
           epoch_rec_error += sample_rec_error
           errHist.append( epoch_rec_error/numBatch )
 
@@ -181,7 +176,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
                 it, batch_idx * len(batch), len(train_loader.dataset),
                 100* batch_idx / len(train_loader)))
               print('Loss: {:.6f} \tRecon Err: {:.6f} \tSparsity: {:.6f} '.format(
-                     sample_loss,sample_rec_error,sample_sparsity))
+                     sampleLoss,sample_rec_error,sample_sparsity))
           
           if batch_idx % saveFreq == 0:
               Dict.printAtomImage(dictAtomImgName)
@@ -191,7 +186,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
 #================================================
     
     ## need one for training, one for testing
-        epoch_average_loss = epoch_loss/numBatch
+        epoch_average_loss = epochLoss/numBatch
         epoch_avg_recErr   = epoch_rec_error/numBatch
         epoch_avg_sparsity = epoch_sparsity/numBatch
     
