@@ -55,7 +55,7 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
       learnRateDecay: scales learnRate every lrdFreq batches, i.e.
         epoch_LR = learnRate*(learnRateDecay**(epoch-1))
       fistaIters : number of iterations to run FISTA when generating epoch codes
-      useL1Loss : set to false to forget sparsity requirement (or set l1w=0)
+      useL1Loss : set to True to penalize sparsity of network output (BUGGY)
       l1w : the L1-norm weight, balances data fidelity with sparsity
       useCUDA : set to true for GPU acceleration
       imSave : boolean determines whether to save images
@@ -145,10 +145,10 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           # loss
           reconErr   = mseLoss(Y_est,Y)
           if useL1Loss:
-              l1Loss  = Y_est.norm(1)/ (X.size(0) * X.size(1) )
+            l1Loss  = Y_est.norm(1) / X.size(0)
          
       ## BACKWARD PASS
-          batchLoss = reconErr + l1w * l1Loss # need to divide by batchsize here?
+          batchLoss = reconErr + l1w * l1Loss
           batchLoss.backward()
           OPT.step()
           scheduler.step()

@@ -67,7 +67,11 @@ class dictionary(nn.Module):
     def normalizeAtoms(self):
         for a in range(0,self.n):
             atom = self.atoms.weight.data[:,a]
-            atom = atom/atom.norm()
+            aNorm = atom.norm()
+            if aNorm < 1e-7:
+                atom *= 0
+            else:
+                atom /= aNorm
             self.atoms.weight.data[:,a]=atom
             
 # Find Maximum Eigenvalue using Power Method
