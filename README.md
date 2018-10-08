@@ -1,7 +1,12 @@
 ### TO-DO
 * save dictionary objects
 * UPDATE: parameter search is now running on the devbox (so good dictionaries can be obtained repeatably)
-* put lua version on (eh...)
+* put lua version on (maybe...)
+
+![CIFAR10](paramSearchResults/CIFAR1010_0210.png)
+![F-mnist10](paramSearchResults/FashionMNIST10_0220.png)
+![asirra16](paramSearchResults/ASIRRA16_0000.png)
+
 
 # Sparse Dictionary Learning
 This repository provides some basic experiments and tools for training a linear dictionary (e.g. for vectors, including vectorized image patches).

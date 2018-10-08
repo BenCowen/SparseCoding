@@ -21,6 +21,8 @@ from DATA.loadImDat import loadData
 from AUX.DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
+# PARAMETERS
+from getParams import fetchVizParams
 
 #######################################################
 # (1) Define experiment.
@@ -28,7 +30,7 @@ import matplotlib.pyplot as plt
 #######################################################
 # Cost function parameters.
 dataset    = "MNIST"
-patchSize  = 32
+patchSize  = 10
 datName    = dataset + str(patchSize)
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
@@ -44,6 +46,10 @@ fistaIters = 200
 # Logistics.
 USE_CUDA = True
 savePath = 'results/'
+
+# **** reproduce results using this function. to play, comment it out. *****
+batchSize, L1_weight, learnRate, learnRateDecay = fetchVizParams(datName)
+# ************
 
 #######################################################
 # (2) Set up data loader and train dictionary.
