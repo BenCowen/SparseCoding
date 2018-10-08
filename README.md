@@ -1,16 +1,16 @@
-### TO-DO
-* save dictionary objects
-* UPDATE: parameter search is now running on the devbox (so good dictionaries can be obtained repeatably)
-* put lua version on (maybe...)
+# Sparse Dictionary Learning
+It is often useful to represent a signal or image in terms of its basic building blocks. For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve". At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels. This is a rudimentary example of "sparse representation"-- i.e., if we have a dictionary of shapes and curves, we can often describe an image as a weighted-sum of those dictionary elements. The fewer the number of dictionary atoms used, the more efficient/sparse the representation is. We refer to the list of weights to use as a "sparse code" when most of the weights are zero.
+
+This repository provides some basic experiments and tools for training a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
+The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
 
 ![CIFAR10](paramSearchResults/CIFAR1010_0210.png)
 ![F-mnist10](paramSearchResults/FashionMNIST10_0220.png)
 ![asirra16](paramSearchResults/ASIRRA16_0000.png)
 
+CIFAR, Fashion-MNIST, and ASIRRA- based atoms, with patch-sizes 10x10, 10x10, and 16x16, respectively.
 
-# Sparse Dictionary Learning
-This repository provides some basic experiments and tools for training a linear dictionary (e.g. for vectors, including vectorized image patches).
-The training process yields a dictionary-- i.e. a matrix, whose rows are _dictionary atoms_-- which can be used along with a sparse code to represent a signal.
+
 This procedure is originally described in "Emergence of simple-cell receptive field properties by learning a sparse code for natural images", by Olshausen and Field [Nature, 381:607–609, 1996](https://www.nature.com/articles/381607a0).
 It is famously used in "Learning Fast Approximations of Sparse Coding" (Gregor and Lecun)
  and recently in "LSALSA: efficient sparse coding in single and multiple dictionary settings" ([Cowen, Saridena, Choromanska](https://arxiv.org/abs/1802.06875)).
@@ -71,3 +71,9 @@ This demo requires [PyTorch](https://pytorch.org/). Once downloaded, simply exec
 It should be easy to play around with both model and optimization parameters.
 All you need to look at is the `DEMO.py` code (which builds the dataloader, defines parameters, calls training subroutines, etc.). 
 For more complicated options, see `DictionaryTraining.py` (where the magic happens). MNIST, CIFAR10, ASIRRA, and Fashion-MNIST are all readily available, but if you have your own dataloader for vectors you should be able to use that too.
+
+### TO-DO
+* save dictionary objects
+* UPDATE: parameter search is now running on the devbox (so good dictionaries can be obtained repeatably)
+* put lua version on (maybe...)
+* color version
