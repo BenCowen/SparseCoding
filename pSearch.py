@@ -28,13 +28,13 @@ dataset    = "MNIST"
 patchSize  = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weightList  = [.1, .15, .2]
+L1_weightList  = [.3, .4]
 
 # OPTIMIZATION PARAMETERS:
-maxEpoch   = 20
+maxEpoch   = 100
 batchSizeList = [10]
-learnRateList = [50, 100, 200, 300, 400, 1000]
-LRDecayList = [0.99, .9]
+learnRateList = [200, 500]
+LRDecayList = [1]
 
 # LOGISTICS:
 USE_CUDA = True
@@ -64,9 +64,9 @@ for i,bsz in  enumerate(batchSizeList):
                                                   codeLen, dataset,
                                                   maxEpoch = maxEpoch,
                                                   useCUDA = USE_CUDA,
-                                                  fistaIters = 75,
-                                                  printFreq = 100,
-                                                  saveFreq = 100,
+                                                  fistaIters = 125,
+                                                  printFreq = 10000,
+                                                  saveFreq = 1000,
                                                   # looped parameters:
                                                   l1w = l1w,
                                                   batchSize = bsz,

@@ -169,6 +169,13 @@ def trainDictionary(train_loader, test_loader, sigLen, codeLen, datName,
           epoch_sparsity  +=  sample_sparsity
           spstyHist.append( epoch_sparsity/ numBatch )
 
+      ## SANITY CHECK:
+          # If the codes are practically all-zero, stop fast.
+          # TODO: something smarter to do here? Lower L1 weight?
+          if np.abs(sample_sparsity - 1.0) < 0.001 :
+            print("CODES NEARLY ALL ZERO. SKIP TO NEXT EPOCH.")
+            break
+ 
      ## Print stuff.
      # You may wish to print some figures here too. See bottom of page.
           if batch_idx % printFreq == 0:

@@ -48,7 +48,7 @@ USE_CUDA = True
 savePath = 'results/'
 
 # **** reproduce results using this function. to play, comment it out. *****
-batchSize, L1_weight, learnRate, learnRateDecay = fetchVizParams(datName)
+# batchSize, L1_weight, learnRate, learnRateDecay = fetchVizParams(datName)
 # ************
 
 #######################################################
