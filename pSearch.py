@@ -28,12 +28,12 @@ dataset    = "MNIST"
 patchSize  = 32
 sigLen     = patchSize**2
 codeLen    = sigLen              # "1x overcomplete"
-L1_weightList  = [.3, .4]
+L1_weightList  = [.3]
 
 # OPTIMIZATION PARAMETERS:
 maxEpoch   = 100
 batchSizeList = [10]
-learnRateList = [200, 500]
+learnRateList = [500]
 LRDecayList = [1]
 
 # LOGISTICS:

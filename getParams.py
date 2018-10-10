@@ -20,13 +20,13 @@ def fetchVizParams(datName):
 
     elif datName == "FashionMNIST10":
         batchSize = 12
-        l1w = 0.2
+        l1w = 0.3
         learnRate = 1000
         LRDecay   = 0.99
 
     elif datName == "ASIRRA16":
         batchSize = 10
-        l1w = 0.125
+        l1w = 0.3
         learnRate = 250
         LRDecay = 1
  
