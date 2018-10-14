@@ -10,6 +10,8 @@ The training process yields a dictionary-- i.e. a matrix, whose rows are the dic
 
 CIFAR, Fashion-MNIST, and ASIRRA- based atoms, with patch-sizes 10x10, 10x10, and 16x16, respectively.
 
+![closeup](data_atoms_compraison.pdf)
+By fiddling with the parameters we can get different dictionaries.
 
 This procedure is originally described in "Emergence of simple-cell receptive field properties by learning a sparse code for natural images", by Olshausen and Field [Nature, 381:607–609, 1996](https://www.nature.com/articles/381607a0).
 It is famously used in "Learning Fast Approximations of Sparse Coding" (Gregor and Lecun)
