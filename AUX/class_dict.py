@@ -8,41 +8,23 @@ Dictionary Class
 """
 import numpy as np
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import torchvision
 
-
-def computeMaxEigVal(Dict):
-    """
-    Find Maximum Eigenvalue using Power Method
-    """
-    if Dict.use_cuda:
-        bk = Variable(torch.ones(1,Dict.n).cuda())
-    else:
-        bk = Variable(torch.ones(1,Dict.n))
-    
-    f = 1
-    iters= 20
-    for n in range(0,iters):
-        bk = bk/f
-        bk = Dict.encode(Dict.forward(bk))
-        f = bk.abs().max()
-    Dict.maxEig = float(bk.abs().max())
 
 class dictionary(nn.Module):
     """
     Class which defines an mxn linear dictionary.
     """
-    def __init__(self, out_size, in_size, datName, use_cuda):
+    def __init__(self, out_size, in_size,
+                   datName = 'noname', use_cuda=True, useBias=False):
         super(dictionary, self).__init__()
+        self.atoms = nn.Linear(in_size, out_size, bias = useBias)
         if use_cuda:
-            self.atoms = nn.Linear(in_size, out_size, bias = False).cuda()
-        else:
-            self.atoms = nn.Linear(in_size, out_size, bias = False)
-        self.m = out_size
-        self.n = in_size
-        self.datName = datName
+          self.atoms = self.atoms.cuda()
+        self.m        = out_size
+        self.n        = in_size
+        self.datName  = datName
         self.use_cuda = use_cuda
         
 # Set Dictionary Weights:
@@ -65,18 +47,29 @@ class dictionary(nn.Module):
     
 # Normalize each column (a.k.a. atom) for the dictionary    
     def normalizeAtoms(self):
-        for a in range(0,self.n):
-            atom = self.atoms.weight.data[:,a]
-            aNorm = atom.norm()
-            if aNorm < 1e-7:
-                atom *= 0
-            else:
-                atom /= aNorm
-            self.atoms.weight.data[:,a]=atom
+      """
+      Normalize each column to ||a||=1.
+      """
+      for a in range(0,self.n):
+        atom = self.atoms.weight.data[:,a]
+        aNorm = atom.norm()
+        atom /= (aNorm+1e-8)
+        self.atoms.weight.data[:,a]=atom
             
 # Find Maximum Eigenvalue using Power Method
-    def getMaxEigVal(self):
-        computeMaxEigVal(self)
+    def getMaxEigVal(self, iters=20):
+      """
+      Find Maximum Eigenvalue using Power Method
+      """
+      bk = torch.ones(1,self.n)
+      if self.use_cuda:
+        bk = bk.cuda()
+    
+      for n in range(0,iters):
+        f = bk.abs().max()
+        bk = bk/f
+        bk = self.encode(self.forward(bk))
+      self.maxEig = bk.abs().max().item()
 
 # Return copies of the weights
     def getDecWeights(self):

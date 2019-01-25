@@ -12,7 +12,6 @@ import torch
 from torch.autograd import Variable
 import random
 # classes
-from AUX.class_dict import computeMaxEigVal
 from AUX.class_dict import dictionary
 from AUX.FISTA import FISTA
 
@@ -37,7 +36,7 @@ x = Variable(torch.ones(1,N))
 decoder = dictionary(M, N, "testDict", False)
 decoder.setWeights( torch.ones(M, N) )
 
-SDx = torch.sum(decoder(x)).data[0]
+SDx = torch.sum(decoder(x)).item()
 PASS = PASS and testEq(SDx, M*N, "\nError: dictionary not multiplying right")
 
 # Maximum eigenvalue and scaling.
@@ -88,7 +87,7 @@ loss = fistaOut["costHist"]
 residual   = fistaOut["residual"]
 
 # Sort of a golden-value test isn't great but...
-codeErr = ((code - optCode).norm(2)**2).sum().data[0]
+codeErr = ((code - optCode).norm(2)**2).sum().item()
 PASS = PASS and testEq(codeErr, 0.8006578, "Error: FISTA no longer computing code correctly")
 
 ## Test convergence:
