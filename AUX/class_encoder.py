@@ -4,9 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from class_dict import dictionary
+from AUX.class_dict import dictionary
 
-class encoder(nn.Module):
+class ENCODER(nn.Module):
   """
   Class of (trainable) encoders. Need to call "initialize_weights" before use!!
   """
@@ -15,7 +15,7 @@ class encoder(nn.Module):
                n_iter          = 1,
                init_Dict       = None,
                datName = 'noname', device='cpu', useBias=False):
-    super(encoder, self).__init__()
+    super(ENCODER, self).__init__()
 
     # Logistics
     self.encodeAlgorithm = encodeAlgorithm
@@ -27,11 +27,11 @@ class encoder(nn.Module):
     self.n_iter = n_iter
     self.We     = nn.Linear(data_size, code_size, bias=useBias)
     self.S      = nn.Linear(code_size, code_size, bias=useBias)
-    self.shrink = None
 
     # Defaults
-    self.mu = None
+    self.mu        = None
     self.L1_weight = None
+    self.thresh    = None
 
 ############################################################################
 # Some miscellaneous methods.
@@ -43,21 +43,50 @@ class encoder(nn.Module):
   def change_encode_algorithm_(self, new_alg):
     """ Change algorithm used during forward-pass."""
     self.encodeAlgorithm = new_alg
-    print('Encoding with algorithm {}.'.format(new_alg))
+    print('Encoding with algorithm {}; NOT updating threshold!'.format(new_alg))
+###############################################
+## The following are for setting the threshold.
+#
+#  def change_L1_weight_(self, l1_weight):
+#    """ Change L1 weight."""
+#    self.L1_weight = l1_weight
+#    self.update_threshold_()
+#    print('L1 weight changed to {}; threshold updated.')
+#
+#  def change_mu_(self, mu):
+#    """ Change mu; changing the threshold accordingly if encode_alg == salsa."""
+#    self.mu     = mu
+#    self.update_threshold_()
+#    if (self.encodeAlgorithm == 'salsa') and (mu!=1):
+#      print('WARNING: USING mu!=1 WITH ISTA-TYPE METHOD!!')
+#
+  def update_threshold_(self):
+    """
+    Implicitly updates the threshold based on self.L1_weights,
+      self.mu, and self.We.
+    """
+    if self.encodeAlgorithm in ['ista','fista']:
+      self.update_L_()
+      self.thresh = self.L1_weight/self.L
+    elif self.encodeAlgorithm == 'salsa':
+      self.thresh = self.L1_weight/self.mu
 
-  def change_L1_weight_(self, l1_weight):
-    """ Change L1 weight."""
-    self.L1_weight = l1_weight
-    self.shrink   = nn.Softshrink(self.L1_weight/self.mu)
+  def update_L_(self, iters=20):
+    """
+    Find Maximum Eigenvalue using Power Method
+    """
+    with torch.no_grad():
+      bk = torch.ones(1,self.code_size).to(self.device)
+    
+      for n in range(0,iters):
+        f = bk.abs().max()
+        bk = bk/f
+        bk = self.We(F.linear(bk, self.We.weight.t()))
+      self.maxEig = bk.abs().max().item()
 
-  def change_mu_(self, mu):
-    """ Change mu."""
-    self.mu     = mu
-    self.shrink = nn.Softshrink(self.L1_weight/self.mu)
-    if (self.encodeAlgorithm != 'salsa') and (mu!=1):
-      print('WARNING: USING mu!=1 WITH ISTA-TYPE METHOD!!')
+#################################################
 
-  def initialize_cvx_lossFcn_(self):
+  def initialize_cvx_lossFcn_(self, Dict):
     """
     Initializes loss function based on given parameters.
     Will fail if L1 weight is not set.
@@ -67,23 +96,19 @@ class encoder(nn.Module):
       raise ValueError('Must intialize L1 weight to compute loss function.')
 
     # Need to counter-multiply by L if ISTA-type initialization was used.
-    if self.init_type == 'ista':
-      AT = lambda x : F.linear(x, self.L*self.We.weight.t())
-    else:
-      AT = lambda x : F.linear(x, self.We.weight.t())
 
-    dataFidelity = lambda x,y:  (0.5*(AT(x)- y).norm(2)**2)/x.size(0)
+    dataFidelity = lambda x,y:  (0.5*(Dict(x)- y).norm(2)**2)/x.size(0)
     L1_loss      = lambda x: (self.L1_weight * x.norm(1)**2)/x.size(0)
     self.lossFcn = lambda x,y: (dataFidelity(x,y) + L1_loss(x)).item()
 ############################################################################
 # Initialize the encoder according to some algorithm.
 #####################################################
-  def initialize_weights_(self, Dict = None, L1_weight = None, alg_fam='ista', mu=None):
+  def initialize_weights_(self, Dict = None, L1_weight = None, init_type='ista', mu=None):
     """
     Fully initializes the encoder using given weight matrices
       (or randomly, if none are given).
     """
-    self.init_type = alg_fam
+    self.init_type = init_type
     # fix-up L1 weights and mu's.
     if self.L1_weight is None:
       if (L1_weight is None):
@@ -94,7 +119,7 @@ class encoder(nn.Module):
     if self.mu is None:
       if mu is None:
         self.mu = 1
-        if alg_fam=='salsa':
+        if init_type=='salsa':
           print('Using default mu value (1).')
       else:
         self.mu = mu
@@ -103,45 +128,59 @@ class encoder(nn.Module):
       Dict = dictionary(self.data_size, self.code_size, use_cuda=False)
 
     #-------------------------------------
+    # Initialize the loss function.
+    self.initialize_cvx_lossFcn_(Dict)
+
+    #-------------------------------------
     # Initialize ISTA-style (first order).
     Wd = Dict.getDecWeights().cpu()
-    if alg_fam=='ista':
+    if init_type=='ista':
       # Get the maximum eigenvalue.
       Dict.getMaxEigVal()
       self.L = Dict.maxEig
       # Initialize.
       self.We.weight.data = (1/self.L)*(Wd.detach()).t()
       self.S.weight.data = torch.eye(Dict.n) - (1/self.L)*(torch.mm(Wd.t(),Wd)).detach()
+      self.thresh = (self.L1_weight/self.L)
       # Set up the nonlinearity, aka soft-thresholding function.
-      self.shrink = nn.Softshrink(self.L1_weight)
+
+    #-------------------------------------
+    # Initialize FISTA-style (first order).
+    elif init_type=='fista':
+      # Get the maximum eigenvalue.
+      Dict.getMaxEigVal()
+      self.L = Dict.maxEig
+      # Initialize.
+      self.We.weight.data = Wd.detach().t()
+      self.thresh = (self.L1_weight/self.L)
+      # Set up the nonlinearity, aka soft-thresholding function.
 
     #---------------------------------------
     # Initialize SALSA-style (second order).
-    elif alg_fam=='salsa':
+    elif init_type=='salsa':
       # Initialize matrices.
       self.We.weight.data = Wd.detach().t()
       AA = torch.mm(Wd.t(), Wd).cpu()
       S_weights = (self.mu*torch.eye(Dict.n) + AA).inverse()
       self.S.weight.data = S_weights.detach()
+      self.thresh = (self.L1_weight/self.mu)
       # Set up the nonlinearity, aka soft-thresholding function.
-      self.shrink = nn.Softshrink(self.L1_weight/mu)
 
     else:
       raise ValueError('Encoders can only be initialized for "ista" and "salsa" like families.')
 
     #-------------------------------------
-    # Initialize the loss function.
-    self.initialize_cvx_lossFcn_()
-
-    #-------------------------------------
     # Print status of the newly created encoder.
-    print('Encoder and loss function are initialized for {}-type algorithms.'.format(alg_fam))
+#    print('Encoder, threshold, and loss functions are initialized for {}-type algorithms.'.format(init_type))
 
     #-------------------------------------
     # Finally, put to device if requested.
     self.We = self.We.to(self.device)
     self.S  = self.S.to(self.device)
 
+  def printStats(self):
+    print('Initialization type = ' + self.init_type)
+    print('Encoding Algorithm  = ' + self.encodeAlgorithm)
 ############################################################################..............
 # Now we must define the forward function.
 #####################################################
@@ -149,6 +188,8 @@ class encoder(nn.Module):
     """
     Forward method selects between one of the below algorithms.
     """
+    if self.init_type != self.encodeAlgorithm:
+      raise NotImplemented('Not yet supporting mix-and-match init and forward types.')
     return getattr(self, self.encodeAlgorithm+'_forward')(data, return_loss)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -163,7 +204,7 @@ class encoder(nn.Module):
     x    = We_y.clone()
     # Iterations.
     for n in range(self.n_iter):
-      x = self.shrink(We_y + self.S(x))
+      x = F.softshrink(We_y + self.S(x), self.thresh)
       if return_loss:
         loss += [self.lossFcn(x,data)]
     # Fin.
@@ -174,21 +215,20 @@ class encoder(nn.Module):
   def fista_forward(self, data, return_loss=False):
     """
     Implements FISTA.
-    REMEMBER that self.We has been scaled by (1/L).
     """
     if return_loss:
       loss = []
     # Initializations.
     yk    = self.We(data)
-    xprev = torch.zeros(yk.size())
+    xprev = torch.zeros(yk.size()).to(self.device)
     t  = 1
     # Iterations.
     for it in range(self.n_iter):
       # Update logistics.
-      residual = F.linear(yk, self.L*self.We.weight.t()) - data;
+      residual = F.linear(yk, self.We.weight.t()) - data;
     # ISTA step 
       tmp = yk - self.We(residual)#/self.L
-      xk  = self.shrink.forward(tmp)
+      xk  = F.softshrink(tmp, lambd=self.thresh)
     # FISTA stepsize update:
       tnext = (1 + (1+4*(t**2))**.5)/2 
       fact  = (t-1)/tnext
@@ -198,7 +238,7 @@ class encoder(nn.Module):
       xprev  = xk
       t      = tnext
       if return_loss:
-        loss += [self.lossFcn(x,data)]
+        loss += [self.lossFcn(yk,data)]
     # Fin.
     if return_loss:
       return yk, loss
@@ -210,11 +250,11 @@ class encoder(nn.Module):
     """
     if return_loss:
       loss = []
-    We_y = self.We(data)
-    x    = We_y
-    d    = torch.zeros(We_y.size()).to(device)
+    We_y   = self.We(data)
+    x      = We_y
+    d      = torch.zeros(We_y.size()).to(self.device)
     for it in range(self.n_iter):
-      u = self.shrink(x+d)
+      u = F.softshrink(x + d, lambd=self.thresh)
       x = self.S(We_y + self.mu*(u-d))
       d += x - u
       if return_loss:
@@ -226,60 +266,146 @@ class encoder(nn.Module):
 ##########################################################################################
 # Now we can add some special cases for MCA...?...
 
+##########################################################################################
+##########################################################################################
 
-
-
-
-
-
+def compute_sparsity(x):
+  return (x.gt(0).sum()/x.numel()).item()
 
 ##########################################################################################
 ##########################################################################################
 ##########################################################################################
 # SANITY tests!!!
-#def sanity():
-#  """
-#  Tests functionality of encoder class.
-#  """
-import matplotlib.pyplot as plt
+def encoder_class_sanity():
+  """
+  Tests functionality of encoder class.
+  """
+  import matplotlib.pyplot as plt
+  torch.manual_seed(3)
+  device='cpu'
 
-device='cpu'
+  data_size = 20
+  code_size = 10
+  e = ENCODER(data_size, code_size, device=device, n_iter=1000)
 
-data_size = 5
-code_size = 10
-e = encoder(data_size, code_size, device=device, n_iter=200)
+  # Create solutions (sparse codes).
+  batch_size=30
+  codeHeight = 1.5
+  x_true = torch.zeros(batch_size, code_size).to(device)
+  for batch in range(batch_size):
+    randi = torch.LongTensor(int(code_size/2)).random_(0, code_size)
+    x_true[batch][randi] = codeHeight*torch.rand(x_true[batch][randi].size()).to(device)
 
-batchSize=3
-data = torch.ones(batchSize, data_size).to(device)
+  # Create the dictionary.
+  D = dictionary(data_size, code_size, use_cuda=(device!='cpu'))
 
-all_loss={}
-comboID = 0
-for D in [None, dictionary(data_size, code_size)]:
-  for algFam in ['ista', 'salsa']:
-    for forwardMethod in ['ista', 'fista', 'salsa']:
-      comboID +=1
-      print('combo {}--------------------------'.format(comboID))
-      e.initialize_weights_(Dict = D, alg_fam=algFam, mu=1.0)
-      e.change_encode_algorithm_(forwardMethod)
+  # Create the observations based on signal model
+  #    y = Dx + w
+  # where w is white noise
+  sigma = 1.5
+  data = D(x_true) + sigma*torch.rand(batch_size, data_size).to(device)
+
+  # Dictionary for collecting results.
+  forwardMethods = ['ista', 'fista', 'salsa']
+  all_loss={}
+  for f in forwardMethods:
+    all_loss[f] = {}
+
+  # Run the experiment.
+  for meth in forwardMethods:
+    print('{} init with {} algorithm--------------------------'.format(meth,meth))
+    e.initialize_weights_(Dict = D, init_type=meth, mu=1, L1_weight=0.05)
+    e.change_encode_algorithm_(meth)
+    with torch.no_grad():
       x, loss = e(data, return_loss=True)
-      all_loss[str(comboID)] = loss
+
+    if meth=='ista':
+      all_loss[meth]['loss'] = loss
+      all_loss[meth]['x']    = x
+    elif meth=='fista':
+      all_loss[meth]['loss'] = loss
+      all_loss[meth]['x']    = x
+    elif meth=='salsa':
+      all_loss[meth]['loss'] = loss
+      all_loss[meth]['x']    = x
 
 
+  # Visualize results.
+  for k in all_loss:
+    plt.figure(1)
+    plt.clf()
+    plt.plot(all_loss[k]['loss'])
+    plt.annotate('%0.3f' % all_loss[k]['loss'][-1],
+                  xy=(1,all_loss[k]['loss'][-1]), xytext=(8,0),
+                  xycoords=('axes fraction', 'data'), textcoords='offset points')
+    plt.title(k+' loss')
+    plt.savefig('./sanity_ims/fixedEncoders/'+k+'_loss.png')
+
+    plt.figure(2)
+    plt.clf()
+    plt.stem(all_loss[k]['x'][0].numpy())
+    plt.title(k+' solution 0 ')
+    plt.savefig('./sanity_ims/fixedEncoders/'+k+'_x.png')
 
 
-for k in all_loss:
-  plt.figure()
-  plt.clf()
-  plt.plot(all_loss[k])
-  plt.savefig('./sanity_ims/combo'+k+'.png')
+  ###############################################################################
+  print('xxxxxxxxxxx Now try a little learning on each architecture xxxxxxxxxxx')
+
+  all_loss={}
+  max_epoch=150
+  for meth in ['ista','salsa']:
+    all_loss[meth]={}
+    print('TRAINING w/ init = {} and alg = {}--------------------------'.format(meth,meth))
+    e.initialize_weights_(Dict = D, init_type=meth, mu=1, L1_weight=0.05)
+    e.change_encode_algorithm_(meth)
+
+    # Set up optimizer.
+    opt = torch.optim.Adam(e.parameters(), lr=0.001)
+
+    # Compute labels.
+    with torch.no_grad():
+      e.change_n_iter_(1000)
+      labels = e(data)
+      e.change_n_iter_(10)
+
+    # Loss function
+    loss = lambda x : F.mse_loss(x, labels)
+    loss_hist = []
+
+    for epoch in range(1,max_epoch):
+      opt.zero_grad()
+      # Forward Pass
+      x = e(data.detach())
+      # Backward Pass
+      err = loss(x)
+      err.backward()
+      opt.step()
+      loss_hist += [err.item()]
+
+    if meth=='ista':
+      all_loss[meth]['loss'] = loss_hist
+      all_loss[meth]['x']    = x.detach()
+    elif meth=='salsa':
+      all_loss[meth]['loss'] = loss_hist
+      all_loss[meth]['x']    = x.detach()
 
 
+  # Visualize results.
+  for k in all_loss:
+    plt.figure(1)
+    plt.clf()
+    plt.plot(all_loss[k]['loss'])
+    plt.annotate('%0.3f' % all_loss[k]['loss'][-1],
+                  xy=(1,all_loss[k]['loss'][-1]), xytext=(8,0),
+                  xycoords=('axes fraction', 'data'), textcoords='offset points')
+    plt.title(k+' Training Loss')
+    plt.savefig('./sanity_ims/trainedEncoders/'+k+'_loss.png')
 
-
-
-
-
-
+    plt.figure(2)
+    plt.clf()
+    plt.stem(all_loss[k]['x'][0].numpy())
+    plt.title(k+' solution after training')
+    plt.savefig('./sanity_ims/trainedEncoders/'+k+'_x.png')
 
 
 

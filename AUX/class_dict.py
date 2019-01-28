@@ -9,6 +9,7 @@ Dictionary Class
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision
 
 
@@ -39,11 +40,13 @@ class dictionary(nn.Module):
 ## BASIC OPERATIONS
 #######################
 # Forward Pass (decoding)
-    def forward(self,input):
-        return self.atoms(input)
+    def forward(self,inputs):
+        return self.atoms(inputs)
 # Transpose Pass ([roughly] encoding)
-    def encode(self,input):
-        return torch.matmul(self.atoms.weight.t(), input.t()).t()
+    def encode(self,inputs):
+        return  F.linear(self.atoms.weight.t(), inputs).t()
+# This worked:
+#        return torch.matmul(self.atoms.weight.t(), input.t()).t()
     
 # Normalize each column (a.k.a. atom) for the dictionary    
     def normalizeAtoms(self):
@@ -61,15 +64,16 @@ class dictionary(nn.Module):
       """
       Find Maximum Eigenvalue using Power Method
       """
-      bk = torch.ones(1,self.n)
-      if self.use_cuda:
-        bk = bk.cuda()
-    
-      for n in range(0,iters):
-        f = bk.abs().max()
-        bk = bk/f
-        bk = self.encode(self.forward(bk))
-      self.maxEig = bk.abs().max().item()
+      with torch.no_grad():
+        bk = torch.ones(1,self.n)
+        if self.use_cuda:
+          bk = bk.cuda()
+      
+        for n in range(0,iters):
+          f = bk.abs().max()
+          bk = bk/f
+          bk = self.encode(self.forward(bk))
+        self.maxEig = bk.abs().max().item()
 
 # Return copies of the weights
     def getDecWeights(self):
