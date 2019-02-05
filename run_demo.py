@@ -40,7 +40,7 @@ parser.add_argument('--dataset', type=str, default='mnist',
                     help='"mnist", "fashion_mnist", "cifar10", "ASIRRA", ...')
 parser.add_argument('--valid-size',type=int, default=-1, metavar='N',
                     help='Number of samples removed for validation. If N<=0, test set is used.')
-parser.add_argument('--patch-size',type=int, default=10, metavar='p',
+parser.add_argument('--patch-size',type=int, default=32, metavar='p',
                     help='Breaks each image into pxp subimages.')
 parser.add_argument('--overComplete', type=float, default=1, metavar='d',
                     help='Defines dictionary as d-overcomplete (number of times overcomplete)')
@@ -72,7 +72,7 @@ parser.add_argument('--momentum', type=float, default=0,
 ########### Logistics
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='Disables CUDA training.')
-parser.add_argument('--save-filename', type=str, default='./no-name',
+parser.add_argument('--save-filename', type=str, default='./results/tmp/no-name',
                     help='Path to directory where everything gets saved.')
 parser.add_argument('--use-HPO-params', action='store_true', default=False,
                     help='If true, uses the hyperparameters found by grid search (stored in "paramSearchResults").')
@@ -84,7 +84,8 @@ parser.add_argument('--save-trained-model', action='store_true', default=False,
                     help='If true, saves trained model with ddict().')
 parser.add_argument('--visualize-dict-atoms', action='store_true', default=False,
                     help='If true, saves image of dictionary atoms during training.')
-
+parser.add_argument('--print-frequency', type=int, default=4,
+                    help='Number of print statements per epoch.')
 
 #######################################################
 # (1) Unpack user inputs.
@@ -132,6 +133,14 @@ print('\n* Loading dataset {}'.format(args.dataset))
 #TODO: valid!!
 rand.seed(args.data_seed)
 train_loader, test_loader = loadData(dataset, patch_size, batch_size)
+
+if hasattr(train_loader, 'numSamples'):
+  numTrData = train_loader.numSamples
+  numTeData = test_loader.numSamples
+else:
+  numTrData = len(train_loader.dataset)
+  numTeData = len(test_loader.dataset)
+
 
 # Now set up CUDA and reset all RNG's.
 device = torch.device("cuda:0" if not args.no_cuda and torch.cuda.is_available() else "cpu")
@@ -184,11 +193,11 @@ if __name__ == "__main__":
     print('DICTIONARY TRAINING XXXXXXXXXXXXXXXXXXXX')
 
     for epoch in range(1, args.max_epochs+1):
+      print('\nEpoch {} of {}.'.format(epoch, args.max_epochs))
       epoch_loss = 0
       epoch_reconErr = 0
 
       for batch_idx, (true_sigs, im_labels) in enumerate(train_loader):
-        print('batch {}/{}'.format(batch_idx,len(train_loader)))
         gc.collect()
         true_sigs = true_sigs.to(device)
 
@@ -221,6 +230,13 @@ if __name__ == "__main__":
         # RECON ERROR
         SH.tr_perf['bw_reconErr'] += [loss.item()]
         epoch_reconErr +=  loss.item()
+
+
+        # Outputs to terminal
+        if batch_idx % int(len(train_loader)/args.print_frequency) == 0:
+          print(' Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                  epoch, batch_idx * true_sigs.size(0), numTrData,
+                  100. * batch_idx / len(train_loader), loss.item()))
       # END BATCH-WISE LOOP THRU DATA
 
       epoch_loss     /= batch_idx+1

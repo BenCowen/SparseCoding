@@ -122,8 +122,8 @@ def loadData(datName, patchSize, batchSize):
     allDatPath = '~/data/'
     # Build preprocessing classes
     normalize  = scaleTo01()
-#    vectorize  = vectorizeIm()
     patchitize = get_patches(patchSize)
+#    vectorize  = vectorizeIm()
     vectorize  = transforms.Lambda(lambda x: x.view(-1, x.shape[-1]*x.shape[-2]))
 
 ##################################################################

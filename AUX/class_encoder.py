@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from AUX.class_dict import dictionary
+from class_dict import dictionary
 
 class ENCODER(nn.Module):
   """
@@ -227,7 +227,7 @@ class ENCODER(nn.Module):
       # Update logistics.
       residual = F.linear(yk, self.We.weight.t()) - data;
     # ISTA step 
-      tmp = yk - self.We(residual)#/self.L
+      tmp = yk - self.We(residual)/self.L
       xk  = F.softshrink(tmp, lambd=self.thresh)
     # FISTA stepsize update:
       tnext = (1 + (1+4*(t**2))**.5)/2 
@@ -284,9 +284,10 @@ def encoder_class_sanity():
   torch.manual_seed(3)
   device='cpu'
 
-  data_size = 20
-  code_size = 10
-  e = ENCODER(data_size, code_size, device=device, n_iter=1000)
+  data_size = 15
+  code_size = 15
+  n_iter    = 75
+  e = ENCODER(data_size, code_size, device=device, n_iter=n_iter)
 
   # Create solutions (sparse codes).
   batch_size=30
@@ -353,7 +354,7 @@ def encoder_class_sanity():
 
   all_loss={}
   max_epoch=150
-  for meth in ['ista','salsa']:
+  for meth in ['ista','salsa', 'fista']:
     all_loss[meth]={}
     print('TRAINING w/ init = {} and alg = {}--------------------------'.format(meth,meth))
     e.initialize_weights_(Dict = D, init_type=meth, mu=1, L1_weight=0.05)
@@ -362,7 +363,7 @@ def encoder_class_sanity():
     # Set up optimizer.
     opt = torch.optim.Adam(e.parameters(), lr=0.001)
 
-    # Compute labels.
+    # Compute labels ("optimal codes").
     with torch.no_grad():
       e.change_n_iter_(1000)
       labels = e(data)
@@ -382,12 +383,8 @@ def encoder_class_sanity():
       opt.step()
       loss_hist += [err.item()]
 
-    if meth=='ista':
-      all_loss[meth]['loss'] = loss_hist
-      all_loss[meth]['x']    = x.detach()
-    elif meth=='salsa':
-      all_loss[meth]['loss'] = loss_hist
-      all_loss[meth]['x']    = x.detach()
+    all_loss[meth]['loss'] = loss_hist
+    all_loss[meth]['x']    = x.detach()
 
 
   # Visualize results.
