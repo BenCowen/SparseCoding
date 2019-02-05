@@ -1,7 +1,21 @@
-# Sparse Dictionary Learning
+# Usage
+This demo requires [PyTorch](https://pytorch.org/).
+
+To start an example, execute `python run_demo.py`, using ` --help` to see optional arguments. The default experiment is a dictionary learning demo with MNIST.
+
+`matlab_type_demo.py` is a sort of MATLAB-style script (an old version of the code that is less flexible). The results are visualized in the `results` subdirectory. You can play around with both model and optimization parameters in this file.
+
+## Purpose
+The ultimate goal of this repository is to provide a sparse coding library that implements experimental platforms for (1) dictionary learning, (2) traditional/convex code inference (e.g. ISTA, SALSA), and (3) "unrolled" learnable encoders (e.g. LISTA,  [LSALSA](https://arxiv.org/abs/1802.06875)).
+
+Dictionary learning is up-and-running, now. In particular I am building an encoder class that combines (2) and (3). Then I will generalize the class for morphological component analysis (MCA), a sparse-coding approach to source separation.
+
+# Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks. For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve". At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels. This is a rudimentary example of "sparse representation"-- i.e., if we have a dictionary of shapes and curves, we can often describe an image as a weighted-sum of those dictionary elements. The fewer the number of dictionary atoms used, the more efficient/sparse the representation is. We refer to the list of weights to use as a "sparse code" when most of the weights are zero.
 
-This repository provides some basic experiments and tools for training a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
+Sparse coding is the problem of jointly recovering the dictionary and the codes, given some data.
+This repository provides some tools and classes for various sparse coding experiments.
+As of now, the focus is on learning a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
 The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
 
 ![CIFAR10](paramSearchResults/CIFAR1010_0210.png)
@@ -63,13 +77,6 @@ for <a href="https://www.codecogs.com/eqnedit.php?latex=p=1,...,P" target="_blan
 In other words, the sparse vector <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{x}(p)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{x}(p)" title="\mathbf{x}(p)" /></a>
 multiplied with the (learned) dictionary <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{A}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{A}" title="\mathbf{A}" /></a>
 provides an efficient approximation to the signal <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{y}(p)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{y}(p)" title="\mathbf{y}(p)" /></a>.
-
-# Usage
-This demo requires [PyTorch](https://pytorch.org/). Once downloaded, simply execute `python DEMO.py` to run the dictionary learning demo with MNIST. The results are visualized in the `results` subdirectory.
-
-It should be easy to play around with both model and optimization parameters.
-All you need to look at is the `DEMO.py` code (which builds the dataloader, defines parameters, calls training subroutines, etc.). 
-For more complicated options, see `DictionaryTraining.py` (where the magic happens). MNIST, CIFAR10, ASIRRA, and Fashion-MNIST are all readily available, but if you have your own dataloader for vectors you should be able to use that too.
 
 ### TO-DO
 * save dictionary objects
