@@ -82,3 +82,5 @@ provides an efficient approximation to the signal <a href="https://www.codecogs.
 * save dictionary objects
 * put lua version on (maybe...)
 * color version
+* training script for encoders
+* re-formulate "learned FISTA"
