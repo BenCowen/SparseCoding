@@ -84,3 +84,4 @@ provides an efficient approximation to the signal <a href="https://www.codecogs.
 * color version
 * training script for encoders
 * re-formulate "learned FISTA"
+* look into SSNAL (see past team emails)
