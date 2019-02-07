@@ -5,7 +5,7 @@ Load a dataset, optionally breaking each image into patches.
 Note: this is a slow way to process patches; instead use
   data creator to save a patchitized dataset.
         
-@author: Benjamin Cowen, 14 Jan 2019
+@author: Benjamin Cowen, 7 Feb 2019
 @contact: ben.cowen@nyu.edu, bencowen.com
 """
 
@@ -127,9 +127,6 @@ def loadData(datName, patchSize, batchSize):
     vectorize  = transforms.Lambda(lambda x: x.view(-1, x.shape[-1]*x.shape[-2]))
 
 ##################################################################
-##################################################################
-##################################################################
-##################################################################
     if datName == 'mnist':
         datPath = allDatPath+'mnist'
     # Normalize,separate into patches
@@ -153,9 +150,6 @@ def loadData(datName, patchSize, batchSize):
         testloader = torch.utils.data.DataLoader(testset, batch_size=bsz,
                                              shuffle=False)
 ##################################################################
-##################################################################
-##################################################################
-##################################################################
     elif datName == 'fashion_mnist':
         datPath = allDatPath+'fashion_mnist'
     # Normalize, scale to the right size(zero pad?), separate into patches
@@ -177,9 +171,6 @@ def loadData(datName, patchSize, batchSize):
                                                download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset,batch_size=bsz,
                                              shuffle=False)
-##################################################################
-##################################################################
-##################################################################
 ##################################################################
     elif datName == 'cifar10':
         datPath = allDatPath+'cifar10'
@@ -203,9 +194,6 @@ def loadData(datName, patchSize, batchSize):
                                                download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=bsz,
                                              shuffle=False)
-##################################################################
-##################################################################
-##################################################################
 ##################################################################
     elif datName == 'ASIRRA':
         traindir = allDatPath+'ASIRRA/train'
@@ -240,15 +228,26 @@ def loadData(datName, patchSize, batchSize):
             #pin_memory=False
             )
 ##################################################################
-##################################################################
-##################################################################
-##################################################################
     else:
         ValueError('"dataset" MUST BE "MNIST", "FashionMNIST", "CIFAR10", OR "ASIRRA"')
 ##################################################################
-##################################################################
-##################################################################
-##################################################################
     return trainloader,testloader
+
+##################################################################
+## LOAD 2 DATASETS AND MIX (uses above classes)
+##################################################################
+#def loadMixData(datName1,datName2, patchSize, batchSize):#
+#
+#trDat1 = torchvision.datasets.ImageFolder(traindir, transform=transform)
+#trDat2 = torchvision.datasets.ImageFolder(traindir, transform=transform)
+
+
+
+
+
+
+
+
+
 
 
