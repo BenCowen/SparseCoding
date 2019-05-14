@@ -16,7 +16,7 @@ After (0) importing modules we (1) designate training and data
 #######################################################
 import numpy as np
 # DATA
-from DATA.loadImDat import loadData
+from loadImDat import loadData
 # TRAINING
 from AUX.DictionaryTraining import trainDictionary
 # PLOTTING

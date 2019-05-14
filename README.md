@@ -3,7 +3,7 @@ This demo requires [PyTorch](https://pytorch.org/).
 
 To start an example, execute `python run_demo.py`, using ` --help` to see optional arguments. The default experiment is a dictionary learning demo with MNIST.
 
-`matlab_type_demo.py` is a sort of MATLAB-style script (an old version of the code that is less flexible). The results are visualized in the `results` subdirectory. You can play around with both model and optimization parameters in this file.
+[//]: <`matlab_type_demo.py` is a sort of MATLAB-style script (an old version of the code that is less flexible). The results are visualized in the `results` subdirectory. You can play around with both model and optimization parameters in this file.>
 
 ## Purpose
 The ultimate goal of this repository is to provide a sparse coding library that implements experimental platforms for (1) dictionary learning, (2) traditional/convex code inference (e.g. ISTA, SALSA), and (3) "unrolled" learnable encoders (e.g. LISTA,  [LSALSA](https://arxiv.org/abs/1802.06875)).

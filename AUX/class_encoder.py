@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from class_dict import dictionary
+from AUX.class_dict import dictionary
 
 class ENCODER(nn.Module):
   """

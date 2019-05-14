@@ -5,7 +5,7 @@ Dictionary Training Demo
 Executable version of DEMO.py script.
 
 @author: Benjamin Cowen, 23 Jan 2019
-@contact: ben.cowen@nyu.edu, bencowen.com
+@contact: benmoo23@gmail.com, bencowen.com
 """
 
 #######################################################
