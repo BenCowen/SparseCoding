@@ -1,3 +1,7 @@
+# UPDATE 9 Sept 2020:
+I tried pulling and running this to find it's incompatible with the latest pytorch, and with Windows. I will be updating it imminently and making sure that learnable SALSA is also included.
+-Ben
+
 # Usage
 This demo requires [PyTorch](https://pytorch.org/).
 
