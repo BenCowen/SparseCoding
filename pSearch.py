@@ -15,7 +15,7 @@ parameters.
 # DATA
 from DATA.loadImDat import loadData
 # TRAINING
-from AUX.DictionaryTraining import trainDictionary
+from UTILS.DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
 

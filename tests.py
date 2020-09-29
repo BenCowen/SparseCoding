@@ -12,8 +12,8 @@ import torch
 from torch.autograd import Variable
 import random
 # classes
-from AUX.class_dict import dictionary
-from AUX.FISTA import FISTA
+from UTILS.class_dict import dictionary
+from UTILS.FISTA import FISTA
 
 testTol = 1e-5
 def testEq(a, b, errorMessage):

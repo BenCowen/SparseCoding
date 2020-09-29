@@ -19,8 +19,8 @@ import random as rand # needed for validation shuffle
 # DATA
 from loadImDat import loadData
 # TRAINING
-from AUX.class_dict import dictionary
-from AUX.class_encoder import ENCODER, compute_sparsity
+from UTILS.class_dict import dictionary
+from UTILS.class_encoder import ENCODER, compute_sparsity
 import gc
 # PLOTTING
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from getParams import fetchVizParams
 # ARGUMENTS
 import argparse
-from AUX.utils import ddict
+from UTILS.utils import ddict
 
 #######################################################
 # (0.5) Parse user inputs.
