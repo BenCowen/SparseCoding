@@ -18,7 +18,7 @@ import numpy as np
 # DATA
 from loadImDat import loadData
 # TRAINING
-from AUX.DictionaryTraining import trainDictionary
+from UTILS.DictionaryTraining import trainDictionary
 # PLOTTING
 import matplotlib.pyplot as plt
 # PARAMETERS

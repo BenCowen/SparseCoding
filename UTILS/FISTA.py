@@ -23,7 +23,7 @@ Output:
 """
 import torch
 from torch.autograd import Variable
-from AUX.class_nonlinearity import soft_thresh
+from UTILS.class_nonlinearity import soft_thresh
 
 def FISTA(y0, A, alpha, maxIter,
           returnCodes = True, returnCost = False, returnResidual = False):

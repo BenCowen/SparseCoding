@@ -19,16 +19,16 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 # DICTIONARY
-from AUX.class_dict import dictionary
+from UTILS.class_dict import dictionary
 # ALGORITHMS
-from AUX.FISTA import FISTA
+from UTILS.FISTA import FISTA
 # PLOTTING
 import matplotlib.pyplot as plt
-from AUX.writeProgressFigs import printProgressFigs
+from UTILS.writeProgressFigs import printProgressFigs
 # DATA
-from AUX.fcn_patchExtract import extractPatches
+from UTILS.fcn_patchExtract import extractPatches
 # MISC
-from AUX.class_nonlinearity import soft_thresh
+from UTILS.class_nonlinearity import soft_thresh
 import gc
   
 

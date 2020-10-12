@@ -76,7 +76,7 @@ class ddict(object):
     def _items(self):
         return  tuple(zip(self._keys(), self._values()))
 
-    def _save(self, filename=None, date=True):
+    def _save(self, filename=None, date=False):
         if filename is None:
             if not hasattr(self, '_filename'): # First save
                 raise ValueError("filename must be provided the first time you call _save()")

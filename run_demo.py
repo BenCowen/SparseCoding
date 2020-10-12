@@ -72,7 +72,7 @@ parser.add_argument('--momentum', type=float, default=0,
 ########### Logistics
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='Disables CUDA training.')
-parser.add_argument('--save-filename', type=str, default='./results/tmp/no-name',
+parser.add_argument('--save-filename', type=str, default='results/tmp/no-name',
                     help='Path to directory where everything gets saved.')
 parser.add_argument('--use-HPO-params', action='store_true', default=False,
                     help='If true, uses the hyperparameters found by grid search (stored in "paramSearchResults").')
@@ -94,7 +94,7 @@ args = parser.parse_args()
 
 # Cost function parameters.
 dataset    = args.dataset
-patch_size  = args.patch_size
+patch_size = args.patch_size
 datName    = dataset + str(patch_size)
 data_size  = patch_size**2
 code_size  = data_size * args.overComplete
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     print('********************')
     SH = ddict(args=args.__dict__)
     if args.save_filename:
-        SH._save(args.save_filename, date=True)
+        SH._save(args.save_filename)
 
     # Store training and test losses, sparsities, and reconstruction errors
     #     after each training epoch.
