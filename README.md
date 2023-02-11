@@ -1,30 +1,35 @@
-# UPDATE 9 Sept 2020:
-I tried pulling and running this to find it's incompatible with the latest pytorch, and with Windows. I will be updating it over the next week-- it won't run right now.
--Ben
 
-# Usage
-This demo requires [PyTorch](https://pytorch.org/).
+# Under Construction
 
-To start an example, execute `python run_demo.py`, using ` --help` to see optional arguments. The default experiment is a dictionary learning demo with MNIST.
+# Alternating Minimization
+This is my personal library for realizing multiple projects from my PhD thesis.
+The goal of this repository is to provide a library for training encoder/decoder neural network architectures with the following specialties:
+- dictionary learning (linear decoder, fixed encoder)
+- "unrolled" learnable encoders (e.g. LISTA,  [LSALSA](https://arxiv.org/abs/1802.06875)).
+- Beyond Backprop style layer-parallel training
 
-[//]: <`matlab_type_demo.py` is a sort of MATLAB-style script (an old version of the code that is less flexible). The results are visualized in the `results` subdirectory. You can play around with both model and optimization parameters in this file.>
-
-## Purpose
-The ultimate goal of this repository is to provide a sparse coding library that implements experimental platforms for (1) dictionary learning, (2) traditional/convex code inference (e.g. ISTA, SALSA), and (3) "unrolled" learnable encoders (e.g. LISTA,  [LSALSA](https://arxiv.org/abs/1802.06875)).
-
-Dictionary learning is up-and-running, now. In particular I am building an encoder class that combines (2) and (3). Then I will generalize the class for morphological component analysis (MCA), a sparse-coding approach to source separation.
+## How to try it
 
 # Sparse Coding Background
-It is often useful to represent a signal or image in terms of its basic building blocks. For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve". At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels. This is a rudimentary example of "sparse representation"-- i.e., if we have a dictionary of shapes and curves, we can often describe an image as a weighted-sum of those dictionary elements. The fewer the number of dictionary atoms used, the more efficient/sparse the representation is. We refer to the list of weights to use as a "sparse code" when most of the weights are zero.
+It is often useful to represent a signal or image in terms of its basic building blocks.
+For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
+At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels.
+This is a rudimentary example of "sparse representation"-- i.e., if we have a *dictionary* of shapes and curves, 
+we can often describe an image as a weighted-sum of those dictionary elements. The fewer the number of dictionary atoms used, 
+the more efficient/sparse the representation is. We refer to the list of weights to use as a *code*, and it is *sparse*
+when most of its weights are zero.
 
-Sparse coding is the problem of jointly recovering the dictionary and the codes, given some data.
+*Sparse coding* is the problem of generating a dictionary from which sparse codes can be computed for every sample of
+a given dataset. The computation of codes given a dictionary is called _encoding_. Philosophically, we can think of
+each layer of a neural network as _encoding_ its inputs into its outputs.
+when we look at a neural network, we can think of each layer as s
 This repository provides some tools and classes for various sparse coding experiments.
 As of now, the focus is on learning a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
 The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
 
-![CIFAR10](paramSearchResults/CIFAR1010_0210.png)
-![F-mnist10](paramSearchResults/FashionMNIST10_0220.png)
-![asirra16](paramSearchResults/ASIRRA16_0000.png)
+![CIFAR10](legacy-code/paramSearchResults/CIFAR1010_0210.png)
+![F-mnist10](legacy-code/paramSearchResults/FashionMNIST10_0220.png)
+![asirra16](legacy-code/paramSearchResults/ASIRRA16_0000.png)
 
 CIFAR, Fashion-MNIST, and ASIRRA- based atoms, with patch-sizes 10x10, 10x10, and 16x16, respectively. To see the atoms side-by-side with the corresponding data, ![see this slide](https://github.com/BenCowen/DictionaryLearning/blob/master/data_atoms_comparison.pdf) produced using my Lua-Torch version of this code.
 
