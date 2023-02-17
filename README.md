@@ -9,6 +9,7 @@ The encoder/decoder philosophy of algorithm architectures really fascinates me. 
 Some tools herein:
 - dictionary learning
 - differentiable convex optimization algorithms (AKA "unrolled" learnable encoders, e.g. [LISTA](https://icml.cc/Conferences/2010/papers/449.pdf),  [LSALSA](https://arxiv.org/abs/1802.06875))
+
 Tools I'm working on:
 - morphological component analysis tools
 - [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
