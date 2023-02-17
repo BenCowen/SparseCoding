@@ -1,14 +1,20 @@
 
 # Under Construction
 
-# Alternating Minimization
-This is my personal library for realizing multiple projects from my PhD thesis.
-The goal of this repository is to provide a library for training encoder/decoder neural network architectures with the following specialties:
-- dictionary learning (linear decoder, fixed encoder)
-- "unrolled" learnable encoders (e.g. LISTA,  [LSALSA](https://arxiv.org/abs/1802.06875)).
-- Beyond Backprop style layer-parallel training
+# About
+This is my personal PyTorch library for realizing a variety of experimental deep learning projects. Also: to host unit-tested code for reproducing results from [my PhD thesis](https://www.proquest.com/openview/6821866ac2a973b555473b2376dc61f3/1?pq-origsite=gscholar&cbl=18750&diss=y).
 
-## How to try it
+The encoder/decoder philosophy of algorithm architectures really fascinates me. It fundamentally draws our attention to the intermediate steps between input and output: what happens between observation and decision-making? In what ways do algorithms break down information before re-synthesizing it into a higher-level conclusion?
+
+Some tools herein:
+- dictionary learning
+- differentiable convex optimization algorithms (AKA "unrolled" learnable encoders, e.g. [LISTA](https://icml.cc/Conferences/2010/papers/449.pdf),  [LSALSA](https://arxiv.org/abs/1802.06875))
+Tools I'm working on:
+- morphological component analysis tools
+- [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
+- Update README beyond this point
+
+## Below here hasn't been updated since 2018... 
 
 # Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
@@ -94,3 +100,5 @@ provides an efficient approximation to the signal <a href="https://www.codecogs.
 * training script for encoders
 * re-formulate "learned FISTA"
 * look into SSNAL (see past team emails)
+* C++ Tensorflow framework....!
+)
