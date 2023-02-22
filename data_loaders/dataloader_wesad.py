@@ -63,7 +63,7 @@ class WesadDataloader:
         """
         win_length_samples = self.Fs[channel_name] * win_len_sec
         fft_len = 2 ** int(np.ceil(np.log2(win_length_samples)))
-        hop_length = int(np.floor(win_length_samples / amount_overlap))
+        hop_length = int(np.floor(win_length_samples * (1-amount_overlap)))
         channel_stft_name = channel_name + '_stft'
         return_complex = self.dtype == torch.complex64
         setattr(self, channel_stft_name,
@@ -79,10 +79,12 @@ class WesadDataloader:
         elif time_units == 'hours':
             time_factor = (1 / 60) ** 2
 
-        half_freq_idx = int(spectrogram.shape[1] / 2)
-        viewable_spect = np.log10(spectrogram[0, :half_freq_idx, :].abs().squeeze().transpose(0, 1))
+        half_freq_idx = int(spectrogram.shape[0] / 2)
+        viewable_spect = np.log10(spectrogram[:half_freq_idx, :].abs().squeeze()+1e-8)
+        # x-axis is time:
         xtick_locs = np.linspace(0, viewable_spect.shape[1], n_ticks)
         xtick_labs = [int(x) for x in np.linspace(0, time_extent * time_factor, n_ticks)]
+        # y-axis is frequency:
         ytick_locs = np.linspace(0, viewable_spect.shape[0], n_ticks)
         ytick_labs = np.linspace(0, Fs / 2, n_ticks)
         plt.imshow(viewable_spect, origin='lower')
@@ -97,9 +99,9 @@ if __name__ == "__main__":
     train_set = [2]
 
     f = WesadDataloader(train_set, base_data_dir, dtype=torch.cfloat)
-    f.setup_spectrogram('acc')
+    f.setup_spectrogram('acc', win_len_sec=10)
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 10))
     T = f.acc.shape[0] / f.Fs['acc']
-    f.stft_viz(f.acc_stft(f.acc[:, 0].view(1, -1)), f.Fs['acc'], T, 'min')
+    f.stft_viz(f.acc_stft(f.acc[:, 0].view(1, -1))[0], f.Fs['acc'], T, 'min')
     plt.savefig('SP.png', dpi=500)
