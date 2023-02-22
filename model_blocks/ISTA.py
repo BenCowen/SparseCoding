@@ -107,10 +107,10 @@ class FISTA(AlgorithmBlock):
 
         return new_encoder
 
+    @torch.no_grad()
     def recordLoss(self, data, xk, it):
         """ MSE between data,xk + L1 norm of xk, averaged over batchsize"""
-        with torch.no_grad():
-            self.loss_hist[it] = ((0.5 * (data - self.decoder(xk)).pow(2).sum().item() +
+        self.loss_hist[it] = ((0.5 * (data - self.decoder(xk)).pow(2).sum().item() +
                                    xk.abs().sum().detach().item())) / data.shape[0]
 
 

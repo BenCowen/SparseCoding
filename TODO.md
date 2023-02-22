@@ -5,25 +5,30 @@
 * STAGE A: basic
     0. ~~Setup PyTest!~~
     1. ~~Make FISTA work (unit test/toy problem)~~
-    2. Make L-FISTA work (unit test/toy problem)
-    3. Set up dataloader/dictionary system. Define trn/tst datasets that get re-used, avoiding train/test leakage.
-       1. unit test dataloader...?
+    2. ~~(A) Make L-FISTA work (unit test/toy problem)~~
+    2. ~~(B) (L)ISTA (subclass FISTA or vice versa)~~
+    3. Set up dataloader system. Encoder/decoder pair owned by dataset?...
+                 or dict point to an encoder and a dataset....
+                Define trn/tst datasets that get re-used, avoiding train/test leakage.
+       1. Figure out the EMG dataset a lil... some viz for github
+          1. 2D complex dict on spectrograms that are overlapped?... but then how reconstruct?
+       2. unit test dataloader...
        2. atom visualizer
     4. Combine into config system. Train a linear dictionary on medium data (e.g. mnist, cifar)
-    4. Train L-FISTA and show it's as good + faster than FISTA. Compare with generic neural net (CNN) encoder.
+    5. Train L-FISTA and show it's as good + faster than FISTA. Compare with generic neural net (CNN) encoder.
             (wallclock plots, sparsity plots: cloud/histogram;; unit-test viz suite?)
-    5. Repeat 0,1 for SALSA class (unit-test). 2,3 should follow automatedly.
-    6. Start blog / readme /colab /notebook about this.
+    6. Repeat 0,1 for SALSA class (unit-test). 2,3 should follow automatedly.
+    7. Start blog / readme /colab /notebook about this.
 * STAGE B: more interesting example
-    7. Try more interesting dataset
+    8. Try more interesting dataset
         1. 1D on financial time series?
         2. Speech separation as goal?...
         3. Generalize to 2D dictionaries?
-    8. Update blog (maybe separate blog)
+    9. Update blog (maybe separate blog)
 * STAGE C: beyond backprop
-    9. Encoder subclass for saving + optimizing codes (unit-test)
-   10. Alt-min style: joint dict/LFista coolness (...or is that implicit?)
-   11. Update blog (maybe separate blog)
+   10. Encoder subclass for saving + optimizing codes (unit-test)
+   11. Alt-min style: joint dict/LFista coolness (...or is that implicit?)
+   12. Update blog (maybe separate blog)
 
 ## PHASE 1:
 **Make it public-ready:**
