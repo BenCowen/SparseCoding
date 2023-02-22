@@ -71,12 +71,25 @@ class WesadDataloader:
                      window=self.get_window(window_type, win_length_samples),
                      return_complex=return_complex))
 
-    def prep_stft(self, spectrogram, style='wide'):
-        if style=='wide':
-            rot = lambda x: x.transpose(0,1)
-        else:
-            rot = lambda x: x
-        return np.log10(rot(spectrogram).abs().squeeze())
+    def stft_viz(self, spectrogram, Fs, time_extent, time_units, n_ticks=5):
+        if time_units == 's':
+            time_factor = 1
+        elif time_units == 'min':
+            time_factor = 1 / 60
+        elif time_units == 'hours':
+            time_factor = (1 / 60) ** 2
+
+        half_freq_idx = int(spectrogram.shape[1] / 2)
+        viewable_spect = np.log10(spectrogram[0, :half_freq_idx, :].abs().squeeze().transpose(0, 1))
+        xtick_locs = np.linspace(0, viewable_spect.shape[1], n_ticks)
+        xtick_labs = [int(x) for x in np.linspace(0, time_extent * time_factor, n_ticks)]
+        ytick_locs = np.linspace(0, viewable_spect.shape[0], n_ticks)
+        ytick_labs = np.linspace(0, Fs / 2, n_ticks)
+        plt.imshow(viewable_spect, origin='lower')
+        plt.xticks(xtick_locs, xtick_labs)
+        plt.yticks(ytick_locs, ytick_labs)
+        plt.xlabel('Time ({})'.format(time_units))
+        plt.ylabel('Hz')
 
 
 if __name__ == "__main__":
@@ -86,6 +99,7 @@ if __name__ == "__main__":
     f = WesadDataloader(train_set, base_data_dir, dtype=torch.cfloat)
     f.setup_spectrogram('acc')
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5,10))
-    plt.imshow(f.prep_stft(f.acc_stft(f.acc[:, 0].view(1, -1))))
-    plt.savefig('SP.png')
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 10))
+    T = f.acc.shape[0] / f.Fs['acc']
+    f.stft_viz(f.acc_stft(f.acc[:, 0].view(1, -1)), f.Fs['acc'], T, 'min')
+    plt.savefig('SP.png', dpi=500)
