@@ -49,16 +49,16 @@ class Dictionary(AlgorithmBlock):
             value = 1 / self.get_max_eig_val()
         self.decoder.weights.data *= value
 
+    @torch.no_grad()
     def normalize_columns(self):
-        with torch.no_grad():
-            # Dictionary is transpose of encoder weights.
-            w = self.Wd()
-            # w.max(dim=0).values
-            self.decoder.weight.data = torch.div(w, w.norm(2, dim=0) + 1e-8)
+        # Dictionary is transpose of encoder weights.
+        w = self.Wd()
+        # w.max(dim=0).values
+        self.decoder.weight.data = torch.div(w, w.norm(2, dim=0) + 1e-8)
 
+    @torch.no_grad()
     def get_max_eig_val(self, dict_weights=None):
         """
         Estimate the maximum EigenValue of a linear dictionary.
         """
-        with torch.no_grad():
-            return torch.lobpcg(torch.mm(self.We(), self.Wd()))[0].item()
+        return torch.lobpcg(torch.mm(self.We(), self.Wd()))[0].item()

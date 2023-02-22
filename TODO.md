@@ -11,6 +11,7 @@
                  or dict point to an encoder and a dataset....
                 Define trn/tst datasets that get re-used, avoiding train/test leakage.
        1. Figure out the EMG dataset a lil... some viz for github
+          1. 2D complex dict on spectrograms that are overlapped?... but then how reconstruct?
        2. unit test dataloader...
        2. atom visualizer
     4. Combine into config system. Train a linear dictionary on medium data (e.g. mnist, cifar)
