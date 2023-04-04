@@ -1,10 +1,12 @@
-
-# Under Construction
-
 # About
-This is my personal PyTorch library for realizing a variety of experimental deep learning projects. Also: to host unit-tested code for reproducing results from [my PhD thesis](https://www.proquest.com/openview/6821866ac2a973b555473b2376dc61f3/1?pq-origsite=gscholar&cbl=18750&diss=y).
+All day, every day we unconsciously segment the world into tidy pieces.
+From distinguishing and identifying elements of the physical space around us to breaking down abstract ideas into familiar units-- decomposition on all planes of conception is fundamental to our brains.
 
-The encoder/decoder philosophy of algorithm architectures really fascinates me. It fundamentally draws our attention to the intermediate steps between input and output: what happens between observation and decision-making? In what ways do algorithms break down information before re-synthesizing it into a higher-level conclusion?
+In mathematical signal processing we use a wide variety of approaches to replicating this automatic decomposition in computer programs.
+There are techniques that simply compute the axes of highest variation amongst data (like Principal Component Analysis), and there are techniques that seek to parameterize human knowledge in order to pull out interpretable components (like [Morphological Component Analysis](https://arxiv.org/abs/2208.06056)).
+There are more explicit approaches like mathematically beamforming data streams to isolate different source signals, and there are more implicit ones like training self-supervised neural networks to encode latent axes of interest as they see fit.
+
+Welcome to my personal PyTorch library for exploring some of these concepts (and to host unit-tested code for reproducing results from [my PhD thesis](https://www.proquest.com/openview/6821866ac2a973b555473b2376dc61f3/1?pq-origsite=gscholar&cbl=18750&diss=y)).
 
 Some tools herein:
 - dictionary learning
@@ -13,11 +15,8 @@ Some tools herein:
 Tools I'm working on:
 - morphological component analysis tools
 - [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
-- Update README beyond this point
 
-## Below here hasn't been updated since 2018... 
-
-# Sparse Coding Background
+# Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
 For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
 At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels.
@@ -27,9 +26,7 @@ the more efficient/sparse the representation is. We refer to the list of weights
 when most of its weights are zero.
 
 *Sparse coding* is the problem of generating a dictionary from which sparse codes can be computed for every sample of
-a given dataset. The computation of codes given a dictionary is called _encoding_. Philosophically, we can think of
-each layer of a neural network as _encoding_ its inputs into its outputs.
-when we look at a neural network, we can think of each layer as s
+a given dataset.
 This repository provides some tools and classes for various sparse coding experiments.
 As of now, the focus is on learning a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
 The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
