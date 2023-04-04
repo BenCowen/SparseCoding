@@ -32,10 +32,10 @@ As of now, the focus is on learning a linear dictionary (e.g. for vectors, inclu
 The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
 
 ![CIFAR10](legacy-code/paramSearchResults/CIFAR1010_0210.png)
-![F-mnist10](legacy-code/paramSearchResults/FashionMNIST10_0220.png)
 ![asirra16](legacy-code/paramSearchResults/ASIRRA16_0000.png)
+![F-mnist10](legacy-code/paramSearchResults/FashionMNIST10_0220.png)
 
-CIFAR, Fashion-MNIST, and ASIRRA- based atoms, with patch-sizes 10x10, 10x10, and 16x16, respectively. To see the atoms side-by-side with the corresponding data, ![see this slide](https://github.com/BenCowen/DictionaryLearning/blob/master/data_atoms_comparison.pdf) produced using my Lua-Torch version of this code.
+CIFAR, ASIRRA-, and Fashion-MNIST-based atoms, with patch-sizes 10x10, 16x16, and 10x10, respectively. To see the atoms side-by-side with the corresponding data, ![see this slide](https://github.com/BenCowen/DictionaryLearning/blob/master/data_atoms_comparison.pdf) produced using my Lua-Torch version of this code.
 
 This procedure is originally described in "Emergence of simple-cell receptive field properties by learning a sparse code for natural images", by Olshausen and Field [Nature, 381:607–609, 1996](https://www.nature.com/articles/381607a0).
 It is famously used in "Learning Fast Approximations of Sparse Coding" (Gregor and Lecun)
