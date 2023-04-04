@@ -7,8 +7,8 @@ Checks that FISTA converges and gets the right answer on a toy problem
 """
 import os
 import torch
-from model_blocks.dictionary import Dictionary
-import UTILS.project_control as proj_control
+from lib.model_blocks.dictionary import Dictionary
+import lib.UTILS.rng_control as proj_control
 
 
 def make_sparse_data(n_samples, data_len, code_len, percent_nonzero,
@@ -42,7 +42,7 @@ def encoder_test(encoder_class, encoder_args, test_settings):
     proj_control.reproducibility_mode()
 
     # Initialize dictionary first so test signal is reproducible:
-    decoder = Dictionary(encoder_args['data_len'], encoder_args['code_len'])
+    decoder = Dictionary(config=encoder_args)
     decoder.normalize_columns()
 
     # Set up training data
@@ -55,7 +55,7 @@ def encoder_test(encoder_class, encoder_args, test_settings):
 
     # Initialize the encoder
     encoder_args['init_dict'] = decoder
-    encoder = encoder_class(**encoder_args, trainable=False)
+    encoder = encoder_class(encoder_args, trainable=False)
 
     # Encode
     fixed_code_est = encoder(train_data)

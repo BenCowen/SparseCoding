@@ -8,8 +8,8 @@ FISTA class and subclass ISTA. Algorithms provide encoder for given decoder.
 @contact: benjamin.cowen.math@gmail.com
 """
 
-from model_blocks.AlgorithmBlock import AlgorithmBlock
-from model_blocks.dictionary import Dictionary
+from lib.model_blocks.AlgorithmBlock import AlgorithmBlock
+from lib.model_blocks.dictionary import Dictionary
 import torch
 import torch.nn.functional as th_fcn
 import copy
@@ -23,8 +23,7 @@ class FISTA(AlgorithmBlock):
       where A is a sparse transform matrix.
     """
 
-    def __init__(self, data_len, code_len, n_iters, sparsity_weight,
-                 trainable=False, init_dict=None, device='cpu'):
+    def __init__(self, config, trainable=False, init_dict=None, device='cpu'):
         """
         data_len: scalar, length of one data sample
         code_len: scalar, length of the code of one data sample
@@ -34,25 +33,28 @@ class FISTA(AlgorithmBlock):
         super(FISTA, self).__init__()
 
         # Logistics
-        self.data_len = data_len
-        self.code_len = code_len
-        self.trainable = trainable
+        self.data_len = config['data-len']
+        self.code_len = config['code-len']
+        if 'trainable' in config:
+            self.trainable = config['trainable']
+        else:
+            self.trainable = trainable
 
         # Initialize
-        self.n_iters = n_iters
-        self.sparsity_weight = sparsity_weight
-        self.loss_hist = torch.full((n_iters,), torch.nan)
+        self.n_iters = config['n-iters']
+        self.sparsity_weight = config['sparsity-weight']
+        self.loss_hist = torch.full((self.n_iters,), torch.nan)
 
         # Dictionary Initialization
-        self._device = device
+        self._device = config['device']
         if init_dict is not None:
             self.decoder = copy.deepcopy(init_dict)
         else:
-            self.decoder = Dictionary(self.data_len, self.code_len, self._device)
+            self.decoder = Dictionary(config)
             self.decoder.normalize_columns()
 
         # Encoder Initialization
-        self.encoder = torch.nn.Linear(data_len, code_len, bias=False, device=self._device)
+        self.encoder = torch.nn.Linear(self.data_len, self.code_len, bias=False, device=self._device)
         self.encoder.weight.data = self.decoder.We()
         self._max_eig = self.decoder.get_max_eig_val()
         self.set_grad()
@@ -62,6 +64,11 @@ class FISTA(AlgorithmBlock):
             self.turn_grad_on()
         else:
             self.turn_grad_off()
+
+    def update_encoder_with_dict(self, decoder):
+        self.decoder = decoder
+        self.encoder.weight.data = self.decoder.We()
+        self._max_eig = self.decoder.get_max_eig_val()
 
     def Wd(self):
         return self.decoder.Wd()
@@ -135,12 +142,5 @@ class ISTA(FISTA):
         for it in range(self.n_iters):
             xk = th_fcn.softshrink(noisy_code + self.S(xk),
                                    lambd=self.sparsity_weight / (2*self._max_eig))
-
-            # xk = th_fcn.softshrink(xk + noisy_code/self._max_eig -
-            #                        self.S(xk)/self._max_eig,
-            #                        lambd=self.sparsity_weight / (2*self._max_eig))
-            # xk = th_fcn.softshrink(xk + noisy_code -
-            #                        self.S(xk)/self._max_eig,
-            #                        lambd=self.sparsity_weight / (2*self._max_eig))
             self.recordLoss(data, xk, it)
         return xk
