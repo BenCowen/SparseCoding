@@ -1,13 +1,13 @@
 
 ## PHASE 0
 **Pull ENTIRE thread on L-FISTA:**
-
+idea: do dict learning on speech spectra
 * STAGE A: basic
     0. ~~Setup PyTest!~~
     1. ~~Make FISTA work (unit test/toy problem)~~
     2. ~~(A) Make L-FISTA work (unit test/toy problem)~~
     2. ~~(B) (L)ISTA (subclass FISTA or vice versa)~~
-    3. Set up dataloader system. Encoder/decoder pair owned by dataset?...
+    3. Set up dataloader system on mnist+asirra. Encoder/decoder pair owned by dataset?...
                  or dict point to an encoder and a dataset....
                 Define trn/tst datasets that get re-used, avoiding train/test leakage.
        1. Figure out the EMG dataset a lil... some viz for github

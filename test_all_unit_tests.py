@@ -11,7 +11,7 @@ IMPORTANT NOTES:
 @date: Feb 8 2023
 @contact: benjamin.cowen.math@gmail.com
 """
-from model_blocks.ISTA import FISTA, ISTA
+from lib.model_blocks.ISTA import FISTA, ISTA
 from UNIT_TESTS.unrolled_algo_tests import encoder_test
 import unittest
 import os

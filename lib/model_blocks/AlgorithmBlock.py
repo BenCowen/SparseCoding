@@ -20,6 +20,7 @@ class AlgorithmBlock(nn.Module):
         for param in self.parameters():
             param.requires_grad = True
 
+
 class SparseCoder(AlgorithmBlock):
     """
     Owns an encoder and decoder.

@@ -1,0 +1,69 @@
+#"""
+#Configuration file template.
+#
+#@author Benjamin Cowen
+#@date 7 Feb 2022
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: celeb-dict-train
+save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-train"
+device: "cuda:0"
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+# Dataset
+data-config:
+  class: PyTorchDataset
+  module: lib.data_loaders.pytorch_datasets
+  data-dir: "K:\\DATASETS\\celeba"
+  n-loader-workers: 4
+  # TODO: windowing might be pointless... focus on loss fcn applied to recon
+  image-size: 64
+  batch-size: 512
+  custom-transforms:
+    OverlappingPatches:
+      patch-size: 16
+      overlap-percentage: 0.25
+      vectorize: True
+
+model-config:
+  class: Dictionary
+  module: lib.model_blocks.dictionary
+  code-len: 512
+
+trainer-config:
+  class: DictionaryLearning
+  module: lib.trainers.dictionary_learning
+  max-epoch: 100
+  batch-print-frequency: 10
+  loss-config:
+    recon-loss:
+      SSIM:
+        kernel-size: 18
+        sigma: 1.5
+      MSELoss: {}
+    code-loss:
+      L1: {}
+  optimizer-config:
+    class: Adam
+    kwargs:
+      lr: 0.1
+    scheduler-config:
+      class: StepLR
+      step-size: 10
+      kwargs:
+        gamma: 0.95
+  encoder-config:
+    class: FISTA
+    module: lib.model_blocks.ISTA
+    n-iters: 200
+    sparsity-weight: 1
+  OverlappingPatches:
+    patch-size: 16
+    overlap-percentage: 0.25
+    vectorize: True
+

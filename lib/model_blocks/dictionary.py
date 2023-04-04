@@ -7,8 +7,7 @@ Dictionary Class. TO-DO: subclass multi-dict.
 @contact: benjamin.cowen.math@gmail.com
 """
 import torch
-from model_blocks.AlgorithmBlock import AlgorithmBlock
-import copy
+from lib.model_blocks.AlgorithmBlock import AlgorithmBlock
 
 
 class Dictionary(AlgorithmBlock):
@@ -19,10 +18,12 @@ class Dictionary(AlgorithmBlock):
     Points to dataset and encoding algorithm used to generate it.
     """
 
-    def __init__(self, data_len, code_len, device='cpu'):
+    def __init__(self, config):
         super(Dictionary, self).__init__()
-        self.decoder = torch.nn.Linear(code_len, data_len, bias=False, device=device)
-        self._device = device
+        code_len = config['code-len']
+        data_len = config['data-len']
+        self.decoder = torch.nn.Linear(code_len, data_len, bias=False).to(config['device'])
+        self._device = config['device']
 
     def forward(self, codes):
         """ convert codes to data """
