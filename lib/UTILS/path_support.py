@@ -61,10 +61,12 @@ def models_to_GPU(model_list):
         model_list[idx] = torch.nn.DataParallel(model_list[idx]).cuda()
     return model_list
 
-def save_train_state(config, model, training_hist):
+def save_train_state(config, model, training_hist, optimizer, scheduler):
     if not os.path.exists(config['save-dir']):
         os.makedirs(config['save-dir'])
         shutil.copy(config['config-path'], os.path.join(config['save-dir'], 'config-backup.yml'))
 
     torch.save(model, os.path.join(config['save-dir'], 'saved_model.pt'))
     torch.save(training_hist, os.path.join(config['save-dir'], 'training_history.pt'))
+    torch.save(optimizer, os.path.join(config['save-dir'], 'optimizer.pt'))
+    torch.save(scheduler, os.path.join(config['save-dir'], 'scheduler.pt'))

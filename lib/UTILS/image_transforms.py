@@ -10,6 +10,12 @@ Custom on-the-fly image transformations
 import torch
 import torch.nn.functional as F
 
+# MISC FCNS
+def get_sparsity_ratio(codes):
+    return codes.abs().gt(0).sum().detach().item() / codes.numel()
+
+def add_frame(img, n_pix, fill_val=1):
+    return F.pad(img, (n_pix, n_pix, n_pix, n_pix), value=fill_val)
 
 # DEVICE
 class AddToDevice(object):
@@ -61,10 +67,10 @@ class OverlappingPatches(object):
         # .repeat(1, 1, 1, 1, self.psz, self.psz)
         # Window and return:
         # self.win_patches.repeat(1, 1, patches.shape[2], patches.shape[3], 1, 1).contiguous() * patches
-        return self.vectorize(patches)
+        return self.vectorize(patches.transpose(-2, -1))
 
 
-    def reconstruct(self, vectorized_patches, img_shape):
+    def fold(self, vectorized_patches, img_shape):
         """
         Special thanks to these:
             https://discuss.pytorch.org/t/fold-and-unfold-how-do-i-put-this-image-tensor-back-together-again/97374/3
@@ -84,3 +90,17 @@ class OverlappingPatches(object):
             pp5.append(F.fold(batch_patch_per_channel[channel], output_size=img_shape, kernel_size=self.psz, stride=self.stride))
         images = torch.cat(pp5, 1)
         return images
+
+    def reconstruct(self, vectorized_patches, img_shape):
+        """Re-fold patches and normalize them for perfect reconstruction"""
+        unnorm_imgs = self.fold(vectorized_patches, img_shape)
+        return unnorm_imgs / self.get_normalizer(unnorm_imgs.shape,
+                                                 unnorm_imgs.device)
+
+    def get_normalizer(self, full_shape, device='cpu'):
+        att_name = f'normalizer_{full_shape}'.replace(".", "_")
+        if not hasattr(self, att_name):
+            setattr(self, att_name, self.fold(self(
+                                          torch.ones(full_shape)),
+                                          full_shape[-2:]).to(device))
+        return getattr(self, att_name)

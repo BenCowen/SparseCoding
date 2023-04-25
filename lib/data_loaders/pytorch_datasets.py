@@ -47,27 +47,26 @@ class PyTorchDataset:
         transform_list = transforms.Compose(transform_list)
 
         train_dataset = torchvision.datasets.ImageFolder(
-                                             self.data_dir,
-                                             transform=transform_list)
+            self.data_dir,
+            transform=transform_list)
 
         # Use sampler for randomization
         training_sampler = torch.utils.data.SubsetRandomSampler(range(len(train_dataset)))
 
         # Prepare Data Loaders for training and validation
         self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.batch_size,
-                                                   sampler=training_sampler,
-                                                   pin_memory=True, num_workers=self.n_loader_workers)
+                                                        sampler=training_sampler,
+                                                        pin_memory=True, num_workers=self.n_loader_workers)
 
         # Set the data size:
         if 'OverlappingPatches' in config['custom-transforms']:
             resize_config = config['custom-transforms']['OverlappingPatches']
             if resize_config['vectorize']:
-                self.data_dim = resize_config['patch-size']**2
+                self.data_dim = resize_config['patch-size'] ** 2
             else:
                 self.data_dim = (resize_config['patch-size'], resize_config['patch-size'])
         elif 'image-size' in config:
             self.data_dim = (config['image-size'], config['image-size'])
-
 
     def parse_config(self, config):
         if 'data-dir' in config:

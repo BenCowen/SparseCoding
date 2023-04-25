@@ -22,24 +22,24 @@ data-config:
   data-dir: "K:\\DATASETS\\celeba"
   n-loader-workers: 4
   # TODO: windowing might be pointless... focus on loss fcn applied to recon
-  image-size: 64
+  image-size: 128
   batch-size: 512
   custom-transforms:
     OverlappingPatches:
-      patch-size: 16
+      patch-size: 32
       overlap-percentage: 0.25
       vectorize: True
 
 model-config:
   class: Dictionary
   module: lib.model_blocks.dictionary
-  code-len: 512
+  code-len: 1024
 
 trainer-config:
   class: DictionaryLearning
   module: lib.trainers.dictionary_learning
-  max-epoch: 100
-  batch-print-frequency: 10
+  max-epoch: 1000
+  batch-print-frequency: 5
   loss-config:
     recon-loss:
       SSIM:
@@ -51,7 +51,7 @@ trainer-config:
   optimizer-config:
     class: Adam
     kwargs:
-      lr: 0.1
+      lr: 0.0001
     scheduler-config:
       class: StepLR
       step-size: 10
@@ -60,10 +60,5 @@ trainer-config:
   encoder-config:
     class: FISTA
     module: lib.model_blocks.ISTA
-    n-iters: 200
-    sparsity-weight: 1
-  OverlappingPatches:
-    patch-size: 16
-    overlap-percentage: 0.25
-    vectorize: True
-
+    n-iters: 100
+    sparsity-weight: 2.5

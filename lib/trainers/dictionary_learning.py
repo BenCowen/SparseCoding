@@ -11,7 +11,8 @@ import torch
 import types
 import lib.UTILS.path_support as torch_aux
 from lib.UTILS.path_support import import_from_specified_class
-from lib.UTILS.image_transforms import OverlappingPatches
+from lib.UTILS.image_transforms import OverlappingPatches, get_sparsity_ratio
+from lib.UTILS.visualizer import Visualizer
 
 
 class DictionaryLearning:
@@ -25,10 +26,12 @@ class DictionaryLearning:
         self.max_epoch = config['max-epoch']
         self.batch_print_frequency = config['batch-print-frequency']
         self.optimizer = self.scheduler = self.training_record = self.loss_fcn = None
-        self.epoch = -1
+        self.epoch = None
         self.encoder = None
-        # TODO: make this optional? why tho?...
-        self.Patcher = OverlappingPatches(config['OverlappingPatches'])
+        self.recon_example = None
+        self.bb_config = None
+        self.Patcher = None
+        self.viz = None
 
     def initialize_encoder(self, model_config):
         # Need to add some things to encoder config so it's consistent with the model:
@@ -37,33 +40,42 @@ class DictionaryLearning:
         self.config['encoder-config']['device'] = model_config['device']
         self.encoder = import_from_specified_class(self.config, 'encoder')
 
-    def train(self, backbone_config, model, dataset):
+    def train(self, backbone_config, model, dataset, loaded_objects={}):
         """ Train the dictionary! """
-
+        # Initialize Visualizer
+        self.bb_config = backbone_config
+        self.viz = Visualizer(self.bb_config['save-dir'])
+        self.Patcher = OverlappingPatches(self.bb_config['data-config']['custom-transforms']['OverlappingPatches'])
         # Configure GPU usage with pinned memory dataloader
         model = model.to(self.config['device'], non_blocking=True)
         self.encoder = self.encoder.to(self.config['device'], non_blocking=True)
 
         # Assign loss function to self:
         loss_fcn = torch_aux.generate_loss_function(self.config['loss-config'], dataset)
+        n_batches = len(dataset.train_loader)
 
         # Initialize the optimizer for our model
         self.optimizer, self.scheduler = torch_aux.setup_optimizer(self.config['optimizer-config'], model)
 
         # Keep record of the training process
-        self.training_record = {'loss-hist': [],
+        self.training_record = {'epoch': 0,
+                                'loss-hist': [],
                                 'sparsity-hist': []}
 
+        self._parse_loaded_objects(loaded_objects)
+        self.epoch = self.training_record['epoch']
+
         while self.epoch < self.max_epoch:
-            self.epoch += 1
-            batch_loss = 0
-            batch_sparsity = 0
+            self.training_record['epoch'] = self.epoch
+            # Add an epoch to the record:
+            self.training_record['loss-hist'].append([])
+            self.training_record['sparsity-hist'].append([])
             for batch_idx, (batch, _) in enumerate(dataset.train_loader):
                 # Reshape channel and patch dimensions into batch dimension
                 batch = batch.to(self.config['device'], non_blocking=True)
                 patches = self.Patcher(batch)
-                model.zero_grad()
-                gc.collect()
+                # f batch_idx > 2:
+                #     break
 
                 # Code inference (encode the batch)
                 with torch.no_grad():
@@ -74,29 +86,95 @@ class DictionaryLearning:
                 # Encoder Optimization
                 # Forward pass
                 est_patches = model(opt_codes).view(patches.shape)
-                batch_est = self.Patcher.reconstruct(est_patches, batch.shape[-2:])
-                loss_value = loss_fcn(batch, batch_est, opt_codes)
+                est_batch = self.Patcher.reconstruct(est_patches, batch.shape[-2:])
+                loss_value = loss_fcn(batch, est_batch, opt_codes)
 
                 # Backward pass:
+                self.optimizer.zero_grad()
                 loss_value.backward()
                 self.optimizer.step()
-                self.scheduler.step()
+                gc.collect()
 
                 # Logistics
-                with torch.no_grad():
-                    loss_value_item = loss_value.detach().item()
-                    batch_loss += loss_value_item
-                    batch_sparsity += opt_codes.abs().gt(0).sum().detach().item()/opt_codes.numel()
-                    if batch_idx % self.batch_print_frequency == 0:
-                        print(f"Epoch {self.epoch} > Batch {batch_idx} > Loss value {loss_value_item:.2E}")
-                    # Save trainer
-                    torch_aux.save_train_state(backbone_config, model, self.training_record)
+                self.batch_update(loss_value, batch_idx, opt_codes, n_batches)
 
-            self.training_record['loss-hist'].append(batch_loss)
-            self.training_record['sparsity-hist'].append(batch_sparsity / batch_idx)
-            print(
-                f"Epoch {self.epoch}/{self.max_epoch} Complete: loss = {batch_loss:.2E}, avg-sparsity = {100 * batch_sparsity / batch_idx:.2E}")
-            self.print_dictionary_atoms(model, patches, est_patches, batch.shape[:2])
+            # End epoch:
+            print("\tEPOCH {}/{} COMPLETE: Loss = {:.2E}, AVG-Sparsity = {:.2E}%".format(
+                self.epoch, self.max_epoch, sum(self.training_record['loss-hist'][-1]),
+                100 * sum(self.training_record['sparsity-hist'][-1]) / batch_idx))
 
-    # def print_dictionary_atoms(self, model, patches, est_patches, batch_shape[:2]):
+            # Save trainer
+            torch_aux.save_train_state(self.bb_config, model, self.training_record,
+                                       self.optimizer, self.scheduler)
+
+            if self.recon_example is None:
+                # Get a couple official samples that will be re-used for reconstruction visualization
+                self.recon_example = batch[:4]
+
+            self.epoch_visualizations(model)
+            self.epoch += 1
+            self.scheduler.step()
+
+    def _parse_loaded_objects(self, exp_backup):
+        """ Attribute everything in the obj """
+        for key, value in exp_backup.items():
+            setattr(self, key, value)
+
+    @torch.no_grad()
+    def batch_update(self, loss_value, batch_idx, opt_codes, n_batches):
+        loss_value_item = loss_value.detach().item()
+        self.training_record['loss-hist'][-1].append(loss_value_item)
+        self.training_record['sparsity-hist'][-1].append(get_sparsity_ratio(opt_codes))
+        if batch_idx % self.batch_print_frequency == 0:
+            print("Epoch {}, Batch {}/{}, Loss {:.2E}, Sparsity, {:.2E}".format(
+                self.epoch, batch_idx, n_batches,
+                self.training_record['loss-hist'][-1][-1],
+                self.training_record['sparsity-hist'][-1][-1]))
+
+    @torch.no_grad()
+    def epoch_visualizations(self, model):
+        """
+        Visualize:
+         - dictionary atoms
+         - original batch of data
+         - patches
+         - codes
+         - code coefficient distribution
+         - code-space as a volume
+         - reconstructions
+         - fill in patches 1 coefficient at a time from largest to smallest
+         - glitch weights around... maybe something subtle... or reverse weighting...
+        """
+
+        # Encode the data and rank the atoms in terms of heaviest usage:
+        model.normalize_columns()
+        self.encoder.update_encoder_with_dict(model)
+        patches = self.Patcher(self.recon_example)
+        codes = self.encoder(patches.view(-1, patches.shape[-1]), n_iters=1000)
+        epoch = self.training_record["epoch"]
+        # Collapse data dimension to get total coefficient power:
+        sorted_code_idx = codes.pow(2).sum(0).argsort()
+
+        # Get the top 100 atoms, as weighted by the code coefficient they produce:
+        atoms = model.decoder.weight.data.detach().transpose(0, 1).unfold(-1, self.Patcher.psz, self.Patcher.psz)
+        top100atoms = atoms[sorted_code_idx[-100:], :].view(10, 10, self.Patcher.psz, self.Patcher.psz)
+
+        perf_summary = 'Loss {:.2E}, Sparsity {:.1E}%'.format(
+                            sum(self.training_record['loss-hist'][-1]),
+                            100 * get_sparsity_ratio(codes))
+
+        self.viz.array_plot(top100atoms,
+                            save_name=f'top100atoms_e{epoch}',
+                            title_str=f'Top 100 atoms used for reconstruction at epoch {epoch}' \
+                                        + '\n' + perf_summary)
+
+        # Now reconstruct from codes and visualize reconstruction:pass
+        est_recons = self.Patcher.reconstruct(model(codes).view(patches.shape), self.recon_example.shape[-2:])
+        self.viz.array_plot(est_recons.view(2, 2, 3, est_recons.shape[-2], est_recons.shape[-1]),
+                            save_name=f'recon_examples_e{epoch}',
+                            title_str=f'Reconstruction at Epoch {epoch}',
+                            color=True)
+
+        # Update the loss plot so far (should really use tensorboard...
+        self.viz.plot_loss(self.training_record, 'loss_history', 'Loss & Sparsity History')
 

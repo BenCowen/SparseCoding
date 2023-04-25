@@ -6,6 +6,7 @@ Config reader and wrapper for the whole system.
 @contact benjamin.cowen.math@gmail.com
 """
 import os
+import torch
 from lib.UTILS.path_support import import_from_specified_class
 
 
@@ -17,6 +18,7 @@ class BackBone:
         self.dataset = None
         self.model = None
         self.save_dir = config['save-dir']
+        self.loaded_objects = {}
 
         # Identify compute device and share with all subconfigs
         if 'device' in config:
@@ -39,18 +41,31 @@ class BackBone:
         else:
             return self
 
+    def load(self):
+        """
+        Loads in every .pt file it can find in save_dir and stores in loaded_objects.
+        model treated specially.
+        """
+        print("Continuing from experiment results saved in "+self.save_dir)
+        for filename in os.listdir(self.save_dir):
+            if filename == 'saved_model.pt':
+                self.model = torch.load(os.path.join(self.save_dir, filename))
+            elif filename.endswith('.pt'):
+                self.loaded_objects[filename.split('.')[0]] = torch.load(os.path.join(self.save_dir, filename))
+
     def configure_dataset(self):
         """ Retrieves dataloader from the specified class. """
         self.dataset = import_from_specified_class(self.config, 'data')
 
     def configure_model(self):
         """ Initializes model from the specified class. """
-        if self.model is not None:
-            # If the model has already been loaded in, bail.
-            return
 
         # Get data-len from the dataloader, and add it to the model-config.
         self.config['model-config']['data-len'] = self.dataset.data_dim
+
+        if self.model is not None:
+            # If the model has already been loaded in, bail.
+            return
 
         # Construct the model
         self.model = import_from_specified_class(self.config, 'model')
@@ -64,5 +79,5 @@ class BackBone:
         # Save the experiment
 
         # Execute
-        trainer.train(self.config, self.model, self.dataset)
+        trainer.train(self.config, self.model, self.dataset, self.loaded_objects)
 

@@ -32,7 +32,7 @@ if __name__ == "__main__":
     controller = BackBone(config)
 
     # Check whether we need to continue from where we left off:
-    controller = controller.check_for_continuation()
+    controller.check_for_continuation()
 
     # Set up data:
     if 'data-config' in config:
