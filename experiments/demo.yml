@@ -8,7 +8,7 @@
 
 # Experiment settings
 experiment-name: celeb-dict-train
-save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-train"
+save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-smallPatchMSE"
 device: "cuda:0"
 allow-continuation: True
 seed-config:
@@ -26,14 +26,14 @@ data-config:
   batch-size: 512
   custom-transforms:
     OverlappingPatches:
-      patch-size: 32
-      overlap-percentage: 0.25
+      patch-size: 16
+      overlap-percentage: 0.5
       vectorize: True
 
 model-config:
   class: Dictionary
   module: lib.model_blocks.dictionary
-  code-len: 1024
+  code-len: 1500
 
 trainer-config:
   class: DictionaryLearning
@@ -42,16 +42,17 @@ trainer-config:
   batch-print-frequency: 5
   loss-config:
     recon-loss:
-      SSIM:
-        kernel-size: 18
-        sigma: 1.5
+#      SSIM:
+#        kernel-size: 18
+#        sigma: 1.5
       MSELoss: {}
-    code-loss:
-      L1: {}
+      TV: {}
+#    code-loss:
+#      L1: {}
   optimizer-config:
     class: Adam
     kwargs:
-      lr: 0.0001
+      lr: 0.001
     scheduler-config:
       class: StepLR
       step-size: 10
@@ -61,4 +62,4 @@ trainer-config:
     class: FISTA
     module: lib.model_blocks.ISTA
     n-iters: 100
-    sparsity-weight: 2.5
+    sparsity-weight: 1

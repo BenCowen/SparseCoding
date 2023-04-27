@@ -55,8 +55,10 @@ class Visualizer:
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
 
         epoch_lines = []
+        last = 0
         for epoch in trn_rec['loss-hist']:
-            epoch_lines.append(sum(epoch_lines) + len(epoch) - 1)
+            epoch_lines.append(last + len(epoch) - 1)
+            last += len(epoch) - 1
         all_loss = list(itertools.chain.from_iterable(trn_rec['loss-hist']))
         all_sparsity = list(itertools.chain.from_iterable(trn_rec['sparsity-hist']))
         ax.plot(all_loss, color='b', label='Loss')

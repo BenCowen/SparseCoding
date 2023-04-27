@@ -5,7 +5,7 @@ Config reader and wrapper for the whole system.
 @date 3 April 2023
 @contact benjamin.cowen.math@gmail.com
 """
-import os
+import os, shutil
 import torch
 from lib.UTILS.path_support import import_from_specified_class
 
@@ -39,6 +39,12 @@ class BackBone:
         if previous_experiment_exists and self.config['allow-continuation']:
             return self.load()
         else:
+            # Copy config
+            if not os.path.exists(self.config['save-dir']):
+                os.makedirs(self.config['save-dir'])
+            shutil.copy(self.config['config-path'],
+                        os.path.join(self.config['save-dir'],
+                        os.path.basename(self.config['config-path'])))
             return self
 
     def load(self):
@@ -56,6 +62,8 @@ class BackBone:
     def configure_dataset(self):
         """ Retrieves dataloader from the specified class. """
         self.dataset = import_from_specified_class(self.config, 'data')
+        if not hasattr(self.dataset, 'valid_loader'):
+            self.dataset.valid_loader = self.dataset.train_loader
 
     def configure_model(self):
         """ Initializes model from the specified class. """

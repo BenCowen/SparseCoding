@@ -29,13 +29,15 @@ def generate_loss_function(config, dataloader=None):
         else:
             recon_losses.append(getattr(custom_losses, loss_name)(dataloader, **config['recon-loss'][loss_name]))
 
-    code_losses = []
-    for loss_name, loss_config in config['code-loss'].items():
-        if hasattr(torch.nn, loss_name):
-            code_losses.append(getattr(torch.nn, loss_name)(**config['code-loss'][loss_name]))
-        else:
-            code_losses.append(getattr(custom_losses, loss_name)(dataloader, **config['code-loss'][loss_name]))
-
+    if 'code-loss' in config:
+        code_losses = []
+        for loss_name, loss_config in config['code-loss'].items():
+            if hasattr(torch.nn, loss_name):
+                code_losses.append(getattr(torch.nn, loss_name)(**config['code-loss'][loss_name]))
+            else:
+                code_losses.append(getattr(custom_losses, loss_name)(dataloader, **config['code-loss'][loss_name]))
+    else:
+        code_losses = [lambda x: 0 * x.sum()]
 
     def loss_fcn(batch, batch_est, codes):
         return sum([loss(batch, batch_est) for loss in recon_losses] +
@@ -61,12 +63,13 @@ def models_to_GPU(model_list):
         model_list[idx] = torch.nn.DataParallel(model_list[idx]).cuda()
     return model_list
 
+
 def save_train_state(config, model, training_hist, optimizer, scheduler):
     if not os.path.exists(config['save-dir']):
         os.makedirs(config['save-dir'])
         shutil.copy(config['config-path'], os.path.join(config['save-dir'], 'config-backup.yml'))
 
-    torch.save(model, os.path.join(config['save-dir'], 'saved_model.pt'))
-    torch.save(training_hist, os.path.join(config['save-dir'], 'training_history.pt'))
+    torch.save(model, os.path.join(config['save-dir'], 'model.pt'))
+    torch.save(training_hist, os.path.join(config['save-dir'], 'training_record.pt'))
     torch.save(optimizer, os.path.join(config['save-dir'], 'optimizer.pt'))
     torch.save(scheduler, os.path.join(config['save-dir'], 'scheduler.pt'))
