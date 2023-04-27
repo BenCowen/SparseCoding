@@ -12,12 +12,15 @@ Some tools herein:
 - dictionary learning
 - differentiable convex optimization algorithms (AKA "unrolled" learnable encoders, e.g. [LISTA](https://icml.cc/Conferences/2010/papers/449.pdf),  [LSALSA](https://arxiv.org/abs/1802.06875))
 
-![loss-hist](SCRATCH/loss_hist.png)
-![top-100-dict-atoms](SCRATCH/dict_hist/top100atoms_e3.png)
-
 Tools I'm working on:
 - morphological component analysis tools
 - [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
+
+## Some preliminary visualizations
+<p align="center">
+ <img src="SCRATCH/celeb-dict-mse/loss_history.png" width="375" height="375"/>
+  <img src="SCRATCH/celeb-dict-mse/dict_hist/top100atoms_e3.png" width="375" height="375"/>
+</p>
 
 # Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
