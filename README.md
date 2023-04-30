@@ -16,6 +16,12 @@ Tools I'm working on:
 - morphological component analysis tools
 - [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
 
+## Some preliminary visualizations
+<p align="center">
+ <img src="SCRATCH/celeb-dict-mse/loss_history.png" width="375" height="375"/>
+  <img src="SCRATCH/celeb-dict-mse/dict_hist/top100atoms_e3.png" width="375" height="375"/>
+</p>
+
 # Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
 For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
