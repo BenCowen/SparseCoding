@@ -59,6 +59,14 @@ class Visualizer:
         for epoch in trn_rec['loss-hist']:
             epoch_lines.append(last + len(epoch) - 1)
             last += len(epoch) - 1
+
+        if len(epoch_lines)>0:
+            first, last = epoch_lines[0], epoch_lines[-1]
+            while len(epoch_lines) > 20:
+                epoch_lines = epoch_lines[::2]
+            epoch_lines.append(first)
+            epoch_lines.append(last)
+
         all_loss = list(itertools.chain.from_iterable(trn_rec['loss-hist']))
         all_sparsity = list(itertools.chain.from_iterable(trn_rec['sparsity-hist']))
         ax.plot(all_loss, color='b', label='Loss')
@@ -72,7 +80,7 @@ class Visualizer:
         ax2.tick_params(axis='y', labelcolor='r')
 
         ax.vlines(epoch_lines, ax.get_ylim()[0],
-                  ax.get_ylim()[1], color='black')
+                  ax.get_ylim()[1], color='black', linewidth=0.25)
 
         plt.suptitle(title_str,
                      fontsize=18)

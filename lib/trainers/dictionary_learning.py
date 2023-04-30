@@ -24,7 +24,11 @@ class DictionaryLearning:
         # First ensure consistency between Set up non-trainable encoder
         self.config = config
         self.max_epoch = config['max-epoch']
-        self.batch_print_frequency = config['batch-print-frequency']
+        self.prints_per_epoch = config['prints-per-epoch']
+        if 'batches-per-epoch' in config:
+            self.max_batches = config['batches-per-epoch']
+        else:
+            self.max_batches = torch.inf
         self.optimizer = self.scheduler = self.training_record = self.loss_fcn = None
         self.epoch = None
         self.encoder = None
@@ -52,7 +56,8 @@ class DictionaryLearning:
 
         # Assign loss function to self:
         loss_fcn = torch_aux.generate_loss_function(self.config['loss-config'], dataset)
-        n_batches = len(dataset.train_loader)
+        n_batches = min(self.max_batches, len(dataset.train_loader))
+        self.batches_per_print = n_batches//self.prints_per_epoch
 
         # Initialize the optimizer for our model
         self.optimizer, self.scheduler = torch_aux.setup_optimizer(self.config['optimizer-config'], model)
@@ -95,10 +100,14 @@ class DictionaryLearning:
                 self.optimizer.zero_grad()
                 loss_value.backward()
                 self.optimizer.step()
+                self.scheduler.step()
                 gc.collect()
 
                 # Logistics
                 self.batch_update(loss_value, batch_idx, opt_codes, n_batches)
+
+                if batch_idx > self.max_batches:
+                    break
 
             # End epoch:
             print("\tEPOCH {}/{} COMPLETE: Loss = {:.2E}, AVG-Sparsity = {:.2E}%".format(
@@ -110,7 +119,6 @@ class DictionaryLearning:
                                        self.optimizer, self.scheduler)
 
             self.epoch += 1
-            self.scheduler.step()
 
     def _parse_loaded_objects(self, exp_backup):
         """ Attribute everything in the obj """
@@ -122,7 +130,7 @@ class DictionaryLearning:
         loss_value_item = loss_value.detach().item()
         self.training_record['loss-hist'][-1].append(loss_value_item)
         self.training_record['sparsity-hist'][-1].append(get_sparsity_ratio(opt_codes))
-        if batch_idx % self.batch_print_frequency == 0:
+        if batch_idx % self.batches_per_print == 0:
             print("Epoch {}, Batch {}/{}, Loss {:.2E}, Sparsity, {:.2E}".format(
                 self.epoch, batch_idx, n_batches,
                 self.training_record['loss-hist'][-1][-1],
@@ -163,7 +171,7 @@ class DictionaryLearning:
         model.normalize_columns()
         self.encoder.update_encoder_with_dict(model)
         patches = self.Patcher(self.recon_example)
-        codes = self.encoder(patches.view(-1, patches.shape[-1]), n_iters=1000)
+        codes = self.encoder(patches.view(-1, patches.shape[-1]), n_iters=100)
         # Collapse data dimension to get total coefficient power:
         sorted_code_idx = codes.pow(2).sum(0).argsort()
 

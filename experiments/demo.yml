@@ -8,7 +8,7 @@
 
 # Experiment settings
 experiment-name: celeb-dict-train
-save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-smallPatchMSE"
+save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-sgd4"
 device: "cuda:0"
 allow-continuation: True
 seed-config:
@@ -23,43 +23,46 @@ data-config:
   n-loader-workers: 4
   # TODO: windowing might be pointless... focus on loss fcn applied to recon
   image-size: 128
-  batch-size: 512
+  batch-size: 64
   custom-transforms:
     OverlappingPatches:
-      patch-size: 16
-      overlap-percentage: 0.5
+      patch-size: 32
+      overlap-percentage: 0.25
       vectorize: True
 
 model-config:
   class: Dictionary
   module: lib.model_blocks.dictionary
-  code-len: 1500
+  code-len: 256
 
 trainer-config:
   class: DictionaryLearning
   module: lib.trainers.dictionary_learning
   max-epoch: 1000
-  batch-print-frequency: 5
+  batches-per-epoch: 99999999999 # Cut out early
+  prints-per-epoch: 5
   loss-config:
     recon-loss:
 #      SSIM:
 #        kernel-size: 18
 #        sigma: 1.5
       MSELoss: {}
-      TV: {}
-#    code-loss:
+#      TV: {}
+#    code-loss: Q
 #      L1: {}
   optimizer-config:
-    class: Adam
+    class: SGD
     kwargs:
-      lr: 0.001
+      lr: 0.005
+      momentum: 0.9
+      nesterov: True
     scheduler-config:
       class: StepLR
       step-size: 10
       kwargs:
-        gamma: 0.95
+        gamma: 0.99
   encoder-config:
     class: FISTA
     module: lib.model_blocks.ISTA
-    n-iters: 100
-    sparsity-weight: 1
+    n-iters: 10
+    sparsity-weight: 0.5

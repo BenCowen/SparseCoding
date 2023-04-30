@@ -10,7 +10,7 @@ import os
 import shutil
 import torch
 import importlib
-import lib.UTILS.custom_loss_functions as custom_losses
+import lib.trainers.custom_loss_functions as custom_losses
 
 
 def import_from_specified_class(config, keyword):
