@@ -10,6 +10,7 @@ class Table:
         self.col_names = column_names
         self.col_deets = column_details
 
+
 class DataBase:
     def __init__(self, database_name,
                  host_name='localhost',  # 3306,
@@ -48,16 +49,14 @@ class DataBase:
         Takes a table and a dict of data where each key should correspond to a
             column of the table, and contain a list of data points to add.
         """
-        # Initialize the insertion command:
+        # Initialize the insertion command and get col names from dict:
         command = f"INSERT INTO {table.name} ("
         for name in table.col_names:
             command += f" {name},"
         command = command[:-1] + ")  VALUES "
 
-        # Convert data to string:
-
+        # Convert data values to string:
         row_str = '('
-
         if type(data_dict[name]) == list:
             n_rows = len(data_dict[name])
             for row in range(n_rows):
@@ -73,18 +72,28 @@ class DataBase:
                     val = str(val)
                 row_str += str(val) + ','
             command += row_str[:-1] + ')'
-        # Finally, insert into the table:
-        self.cursor.execute(command)
-        self.db.commit()
 
-    def execute_query(self, query):
+        # Finally, insert into the table:
+        self.execute_query(command, need_commit=True)
+
+    def execute_query(self, query, need_fetch=False, need_commit=False):
+        x = None
         try:
-            self.cursor(query)
-            self.db.commit()
+            self.cursor.execute(query)
+            if need_fetch:
+                x = self.cursor.fetchall()
+            if need_commit:
+                self.db.commit()
         except Error as err:
-            print(f'Query failed with error message {err}...')
+            print(f'Query failed:\n\t "{err}"...')
+
+        return x
+
+    def close(self):
+        self.cursor.close()
+        self.db.close()
 
 
 if __name__ == "__main__":
-    database = DataBase(database_name='inaccessible_worlds',
-                        user_password=get_sql_password())
+    database = DataBase(database_name='inaccessible_worlds')
+

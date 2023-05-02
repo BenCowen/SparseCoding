@@ -13,31 +13,34 @@ import torch
 import torchvision.transforms as transforms
 import os
 from sql_tools import DataBase, Table
-from non_committed_functions import get_data_root
+from non_committed_functions import get_data_root, get_datastats_path
 
 ###########################
 desired_nrows = 800
 desired_ncols = 800
+data_name = 'inaccessible worlds'
+
+datastats_path = get_datastats_path(data_name)
 # Decide on column names:
 col_names = ['unique_id',
              'origin_path',
              'background_ratio',
              'grayscale_var',
              'nrow',
-             'ncol']#,
-             # 'data']
+             'ncol']
+
 col_details = ['INT PRIMARY KEY',
                'VARCHAR(100) NOT NULL',
                'FLOAT',
                'FLOAT',
                'INT',
-               'INT']#,
-               # ' MEDIUMBLOB']
+               'INT']
 
 img_table = Table('images', col_names, col_details)
-database = DataBase('inaccessible_worlds')
+database = DataBase(data_name.replace(' ', '_'))
 database.add_table(img_table)
 ###########################
+
 to_img = transforms.ToTensor()
 resize = transforms.Resize((desired_nrows, desired_ncols), interpolation=transforms.InterpolationMode.NEAREST)
 
@@ -45,15 +48,22 @@ resize = transforms.Resize((desired_nrows, desired_ncols), interpolation=transfo
 channelwise_mean_list = []
 unique_id = -1
 
-for root, subdirs, files in os.walk(get_data_root('inaccessible worlds')):
+for root, subdirs, files in os.walk(get_data_root(data_name)):
+    if os.path.dirname(datastats_path) in root:
+        # Special folder with dataset statistics
+        continue
+
     for filename in files:
-        if filename.endswith('.pt'):
-            continue
         unique_id += 1
+        print(f'adding image #{unique_id}')
 
         # Load the image
         filepath = os.path.join(root, filename)
         img = to_img(Image.open(filepath))
+
+        # forget alpha channel:
+        if img.shape[0] > 3:
+            img = img[:3]
 
         # Scale it to [0, 1]
         img -= img.min()
@@ -61,15 +71,17 @@ for root, subdirs, files in os.walk(get_data_root('inaccessible worlds')):
 
         # Get metadata
         channelwise_mean_list.append([img[z].mean() for z in range(img.shape[0])])
-        bkgd_rat = ((img == img.sum(0).view(-1).mode().values).sum() / img.numel()).item()
-        grayscale_var = ((img.numpy().argmin(0)+img.numpy().argmax(0))/2).var()
+
+        gimg = transforms.functional.rgb_to_grayscale(img)
+        bkgd_rat = ((gimg == gimg.view(-1).mode().values).sum() / gimg.numel()).item()
+        grayscale_var = gimg.var().item()
 
         # Do some of the preprocessing now
         # img = resize(img)
 
         # Insert data into the table:
         data_dict = {'unique_id': unique_id,
-                     'origin_path': filepath,
+                     'origin_path': filepath.replace(r"\\", "/"),
                      'background_ratio': bkgd_rat,
                      'grayscale_var': grayscale_var,
                      'nrow': img.shape[1],
@@ -85,7 +97,5 @@ stats = {'mean': M.mean(0),
          'var': M.var(0),
          'n-samples': M.shape[0],
          'n-channels': M.shape[1]}
-torch.save(stats, os.path.join(get_data_root('inaccessible worlds'),
-                               'dataset_stats.pt'))
+torch.save(stats, os.path.join(datastats_path))
 print('channel statistics: \n', stats)
-
