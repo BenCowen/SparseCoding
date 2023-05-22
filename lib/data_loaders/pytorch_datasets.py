@@ -59,8 +59,8 @@ class PyTorchDataset:
                                                         pin_memory=True, num_workers=self.n_loader_workers)
 
         # Set the data size:
-        if 'OverlappingPatches' in config['custom-transforms']:
-            resize_config = config['custom-transforms']['OverlappingPatches']
+        if 'OverlappingPatches' in config['post-load-transforms']:
+            resize_config = config['post-load-transforms']['OverlappingPatches']
             if resize_config['vectorize']:
                 self.data_dim = resize_config['patch-size'] ** 2
             else:

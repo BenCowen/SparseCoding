@@ -1,0 +1,82 @@
+#"""
+#Configuration file for training VAE on inaccessible worlds database.
+#
+#@author Benjamin Cowen
+#@date 21 May 2023
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: vae-ia
+save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\inaccessible-worlds"
+device: &device "cuda:0"
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+
+# Dataset
+data-config:
+  class: GlitchDataLoader
+  module: lib.data_loaders.glitch_datasets
+  n-loader-workers: 4
+  batch-size: 64
+  random-add: 0.5
+  load-transforms:
+    Resize:
+     size: 256
+    ToTensor: {}
+    Normalize: {}
+  post-load-transforms: &postloadtransforms
+    OverlappingPatches:
+      patch-size: 16
+      overlap-percentage: 0.25
+      vectorize: True
+  device: *device
+
+model-config:
+  class: VanillaVae
+  module: lib.model_blocks.variational_autoencoders
+  in-channels: 3
+  hidden-sizes:
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
+    - 512
+  latent-dim: 128
+  cnn-kwargs:
+    kernel_size: 3
+    stride: 2
+    padding: 1
+  print: False
+  device: *device
+
+
+trainer-config:
+  class: SslTrainer
+  module: lib.trainers.ssl_trainer
+  max-epoch: 10000
+  batches-per-epoch: 99999 # Cut out early
+  prints-per-epoch: 4
+  loss-config:
+    torch-loss:
+      MSELoss: {}
+    custom-loss:
+      Kld2N01:
+        kld_weight: 0.001
+  optimizer-config:
+    class: Adam
+    kwargs:
+      lr: 0.0005
+    scheduler-config:
+      class: StepLR
+      step-size: 10
+      kwargs:
+        gamma: 0.925
+  post-load-transforms: *postloadtransforms
+  device: *device
+  save-dir: *savedir

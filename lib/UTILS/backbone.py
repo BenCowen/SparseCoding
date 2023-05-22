@@ -21,14 +21,13 @@ class BackBone:
         self.loaded_objects = {}
 
         # Identify compute device and share with all subconfigs
-        if 'device' in config:
-            self._device = config['device']
-        else:
-            self._device = 'cpu'
-        # I hate this XD
-        for key, _ in self.config.items():
-            if key.endswith('-config'):
-                self.config[key]['device'] = self._device
+        self._device = config['device']
+
+        # Set up results directory:
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+            shutil.copy(self.config['config-path'],
+                        os.path.join(self.save_dir, 'config-backup.yml'))
 
     def check_for_continuation(self):
         """
@@ -81,11 +80,9 @@ class BackBone:
     def run_experiment(self):
         # Generate the trainer
         trainer = import_from_specified_class(self.config, 'trainer')
-        # Need a dictionary config to init encoder:
-        trainer.initialize_encoder(self.config['model-config'])
 
         # Save the experiment
 
         # Execute
-        trainer.train(self.config, self.model, self.dataset, self.loaded_objects)
+        trainer.train(self.model, self.dataset, self.loaded_objects)
 

@@ -13,29 +13,20 @@ import lib.UTILS.path_support as torch_aux
 from lib.UTILS.path_support import import_from_specified_class
 from lib.UTILS.image_transforms import OverlappingPatches, get_sparsity_ratio
 from lib.UTILS.visualizer import Visualizer
+from lib.trainers.trainer_abc import Trainer
 
 
-class DictionaryLearning:
+class DictionaryLearning(Trainer):
     """
     Use stochastic optimization to train a dictionary of atoms for sparse reconstruction.
     """
 
     def __init__(self, config):
-        # First ensure consistency between Set up non-trainable encoder
-        self.config = config
-        self.max_epoch = config['max-epoch']
-        self.prints_per_epoch = config['prints-per-epoch']
-        if 'batches-per-epoch' in config:
-            self.max_batches = config['batches-per-epoch']
-        else:
-            self.max_batches = torch.inf
-        self.optimizer = self.scheduler = self.training_record = self.loss_fcn = None
-        self.epoch = None
-        self.encoder = None
+        super(DictionaryLearning, self).__init__(config)
         self.recon_example = None
-        self.bb_config = None
         self.Patcher = None
         self.viz = None
+        self.encoder = self.initialize_encoder(self.config['model-config'])
 
     def initialize_encoder(self, model_config):
         # Need to add some things to encoder config so it's consistent with the model:
@@ -44,12 +35,11 @@ class DictionaryLearning:
         self.config['encoder-config']['device'] = model_config['device']
         self.encoder = import_from_specified_class(self.config, 'encoder')
 
-    def train(self, backbone_config, model, dataset, loaded_objects={}):
+    def train(self, model, dataset, loaded_objects={}):
         """ Train the dictionary! """
         # Initialize Visualizer
-        self.bb_config = backbone_config
-        self.viz = Visualizer(self.bb_config['save-dir'])
-        self.Patcher = OverlappingPatches(self.bb_config['data-config']['custom-transforms']['OverlappingPatches'])
+        self.viz = Visualizer(self.config['save-dir'])
+        self.Patcher = OverlappingPatches(self.config['post-load-transforms']['OverlappingPatches'])
         # Configure GPU usage with pinned memory dataloader
         model = model.to(self.config['device'], non_blocking=True)
         self.encoder = self.encoder.to(self.config['device'], non_blocking=True)
@@ -104,8 +94,13 @@ class DictionaryLearning:
                 gc.collect()
 
                 # Logistics
-                self.batch_update(loss_value, batch_idx, opt_codes, n_batches)
-
+                with torch.no_grad():
+                    loss_value_item = loss_value.detach().item()
+                    last_sparsity = get_sparsity_ratio(opt_codes)
+                    self.training_record['loss-hist'][-1].append(loss_value_item)
+                    self.training_record['sparsity-hist'][-1].append(last_sparsity)
+                    self.batch_print(loss_value_item, batch_idx, n_batches,
+                                     other_prints={'Sparsity': last_sparsity})
                 if batch_idx > self.max_batches:
                     break
 
@@ -119,22 +114,6 @@ class DictionaryLearning:
                                        self.optimizer, self.scheduler)
 
             self.epoch += 1
-
-    def _parse_loaded_objects(self, exp_backup):
-        """ Attribute everything in the obj """
-        for key, value in exp_backup.items():
-            setattr(self, key, value)
-
-    @torch.no_grad()
-    def batch_update(self, loss_value, batch_idx, opt_codes, n_batches):
-        loss_value_item = loss_value.detach().item()
-        self.training_record['loss-hist'][-1].append(loss_value_item)
-        self.training_record['sparsity-hist'][-1].append(get_sparsity_ratio(opt_codes))
-        if batch_idx % self.batches_per_print == 0:
-            print("Epoch {}, Batch {}/{}, Loss {:.2E}, Sparsity, {:.2E}".format(
-                self.epoch, batch_idx, n_batches,
-                self.training_record['loss-hist'][-1][-1],
-                self.training_record['sparsity-hist'][-1][-1]))
 
     @torch.no_grad()
     def epoch_visualizations(self, model, valid_loader):

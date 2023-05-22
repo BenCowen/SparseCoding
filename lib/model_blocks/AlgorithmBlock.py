@@ -20,7 +20,11 @@ class AlgorithmBlock(nn.Module):
         for param in self.parameters():
             param.requires_grad = True
 
-
+    def add_to_device(self, pytorch_obj=None):
+        if pytorch_obj is None:
+            self.to(self._device, non_blocking=self.non_blocking)
+        else:
+            return pytorch_obj.to(self._device, non_blocking=self.non_blocking)
 class SparseCoder(AlgorithmBlock):
     """
     Owns an encoder and decoder.

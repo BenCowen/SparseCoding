@@ -81,7 +81,7 @@ for root, subdirs, files in os.walk(get_data_root(data_name)):
 
         # Insert data into the table:
         data_dict = {'unique_id': unique_id,
-                     'origin_path': filepath.replace(r"\\", "/"),
+                     'origin_path': filepath.replace("\\", "\\\\"),
                      'background_ratio': bkgd_rat,
                      'grayscale_var': grayscale_var,
                      'nrow': img.shape[1],

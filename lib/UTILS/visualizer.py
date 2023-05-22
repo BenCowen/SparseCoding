@@ -25,7 +25,7 @@ class Visualizer:
         Assumes tensor_grid: (nr, nc, m, n)
         generates a plot with nr rows, nc cols, with mxn images shown in each.
         """
-        epoch_save = os.path.join(self.save_dir, 'dict_hist')
+        epoch_save = os.path.join(self.save_dir, 'results')
         if not os.path.exists(epoch_save):
             os.makedirs(epoch_save)
 
@@ -68,16 +68,16 @@ class Visualizer:
             epoch_lines.append(last)
 
         all_loss = list(itertools.chain.from_iterable(trn_rec['loss-hist']))
-        all_sparsity = list(itertools.chain.from_iterable(trn_rec['sparsity-hist']))
+        # all_sparsity = list(itertools.chain.from_iterable(trn_rec['sparsity-hist']))
         ax.plot(all_loss, color='b', label='Loss')
         ax.tick_params(axis='y', labelcolor='b')
         ax.set_xlabel('Epochs')
         ax.set_xticks(epoch_lines)
-        ax.set_xticklabels([n+1 for n in range(len(epoch_lines))])
-
-        ax2 = ax.twinx()
-        ax2.plot(all_sparsity, color='r', label='Sparsity')
-        ax2.tick_params(axis='y', labelcolor='r')
+        ax.set_xticklabels([n for n in epoch_lines])
+        #
+        # ax2 = ax.twinx()
+        # ax2.plot(all_sparsity, color='r', label='Sparsity')
+        # ax2.tick_params(axis='y', labelcolor='r')
 
         ax.vlines(epoch_lines, ax.get_ylim()[0],
                   ax.get_ylim()[1], color='black', linewidth=0.25)
