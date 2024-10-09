@@ -50,7 +50,8 @@ def encoder_test(encoder_class, encoder_args, test_settings):
     noise_level = 0.1
     signal_level = 2
     batch_size = 23
-    opt_train_codes, train_data = make_sparse_data(batch_size, encoder_args['data_len'], encoder_args['code_len'],
+    opt_train_codes, train_data = make_sparse_data(batch_size,
+                                                   encoder_args['data_dim'], encoder_args['code_dim'],
                                                    percent_nonzero, noise_level, signal_level, decoder)
 
     # Initialize the encoder

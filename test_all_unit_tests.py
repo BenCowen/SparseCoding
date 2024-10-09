@@ -28,8 +28,8 @@ class UnrolledAlgorithmTester(unittest.TestCase):
     def __init__(self, make_plots=True, verbose=True):
         unittest.TestCase.__init__(self)
         # Same data, same cost function:
-        self.problem_params = {'data_len': 64,
-                               'code_len': 128,
+        self.problem_params = {'data_dim': 64,
+                               'code_dim': 128,
                                'sparsity_weight': 0.5,
                                'n_iter': 250}
 
@@ -92,12 +92,16 @@ class UnrolledAlgorithmTester(unittest.TestCase):
                                 f'{key1} and {key2} converged to different solutions!')
 
     def runTest(self):
+        #########################################
+        # Solver Tests
         # Component tests:
         self.test_ista()
         self.test_fista()
         # Composite tests:
         self.composite_test_convexity()
 
+        #########################################
+        # Pipeline integ test
 
 if __name__ == "__main__":
     unittest.main()

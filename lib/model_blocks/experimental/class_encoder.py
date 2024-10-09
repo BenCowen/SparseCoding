@@ -401,8 +401,7 @@ def encoder_class_sanity():
     plt.clf()
     plt.stem(all_loss[k]['x'][0].numpy())
     plt.title( k +' solution after training')
-    plt.savefig('./sanity_ims/trainedEncoders/ ' + k +'
-g')
+    plt.savefig('./sanity_ims/trainedEncoders/ ' + k +'.png')
 
 
 
