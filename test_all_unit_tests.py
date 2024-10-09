@@ -53,7 +53,8 @@ class UnrolledAlgorithmTester(unittest.TestCase):
         fix_loss_chg, fix_recon_err, lrn_recon_err, training_loss_change, est_code = encoder_test(
             FISTA,
             self.problem_params,
-            self.tester_settings)
+            self.tester_settings
+        )
         # Check that toy problem worked:
         self.assertTrue(fix_loss_chg < self._convergence_rel_chg_tol, 'FISTA failed to converge')
         self.assertTrue(fix_recon_err < self._recon_rel_err_tol, 'FISTA failed to reconstruct data')
@@ -67,7 +68,8 @@ class UnrolledAlgorithmTester(unittest.TestCase):
         fix_loss_chg, fix_recon_err, lrn_recon_err, training_loss_change, est_code = encoder_test(
             ISTA,
             self.problem_params,
-            self.tester_settings)
+            self.tester_settings
+        )
         # Check that toy problem worked:
         self.assertTrue(fix_loss_chg < self._convergence_rel_chg_tol, 'ISTA failed to converge')
         self.assertTrue(fix_recon_err < self._recon_rel_err_tol, 'ISTA failed to reconstruct data')
@@ -85,9 +87,9 @@ class UnrolledAlgorithmTester(unittest.TestCase):
                 rel_recon_err = ((self.convex_solutions[key1] - self.convex_solutions[key2]).pow(2).sum().item() /
                                  (self.convex_solutions[key2].pow(2).sum().item() *
                                  self.convex_solutions[key1].shape[0]))
-                print('||{} - {}||^2 / (bsz*||{}||^2) = {}'.format(key1, key2, key2, rel_recon_err))
+                print(f'\t||{key1} - {key2}||^2 / (bsz*||{key2}||^2) = {rel_recon_err:.2E}')
                 self.assertTrue(rel_recon_err < self._recon_rel_err_tol,
-                                '{} and {} converged to different solutions!'.format(key1, key2))
+                                f'{key1} and {key2} converged to different solutions!')
 
     def runTest(self):
         # Component tests:

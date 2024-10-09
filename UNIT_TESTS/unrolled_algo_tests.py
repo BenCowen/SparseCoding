@@ -121,9 +121,10 @@ def encoder_test(encoder_class, encoder_args, test_settings):
         plt.savefig(os.path.join(test_settings['image_dir'], '{}-test-visualization.png'.format(encoder_name)))
 
     if test_settings['verbose']:
-        print('{} loss change = '.format(encoder_name), fixed_loss_change)
-        print('{} relative reconstruction error = '.format(encoder_name), fixed_rel_recon_err)
-        print('Learned-{} loss change = '.format(encoder_name), learned_loss_change)
-        print('Learned-{} relative reconstruction error = '.format(encoder_name), learned_rel_recon_err)
-        print('Learned-{} training loss change = '.format(encoder_name), training_loss_change)
+        print(f"Test for {encoder_name}")
+        print(f'\t{encoder_name} loss change = {fixed_loss_change:.2E}')
+        print(f'\t{encoder_name} relative reconstruction error = {fixed_rel_recon_err:.2E}')
+        print(f'\tLearned-{encoder_name} loss change = {learned_loss_change:.2E}')
+        print(f'\tLearned-{encoder_name} relative reconstruction error = {learned_rel_recon_err:.2E}')
+        print(f'\tLearned-{encoder_name} training loss change = {training_loss_change:.2E}')
     return fixed_loss_change, fixed_rel_recon_err, learned_rel_recon_err, training_loss_change, fixed_code_est
