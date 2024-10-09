@@ -94,8 +94,8 @@ class ENCODER(nn.Module):
 
     # Need to counter-multiply by L if ISTA-type initialization was used.
 
-    dataFidelity = lambda x ,y:  (0. 5 *(Dict(x )- y).norm(2 )* *2 ) /x.size(0)
-    L1_loss      = lambda x: (self.L1_weight * x.norm(1 )* *2 ) /x.size(0)
+    dataFidelity = lambda x ,y:  (0.5 *(Dict(x )- y).norm(2 )**2 ) /x.size(0)
+    L1_loss      = lambda x: (self.L1_weight * x.norm(1 )**2 ) /x.size(0)
     self.lossFcn = lambda x ,y: (dataFidelity(x ,y) + L1_loss(x)).item()
 ############################################################################
 # Initialize the encoder according to some algorithm.
@@ -131,7 +131,7 @@ class ENCODER(nn.Module):
     # -------------------------------------
     # Initialize ISTA-style (first order).
     Wd = Dict.getDecWeights().cpu()
-    if init_typ e= ='ista':
+    if init_type=='ista':
       # Get the maximum eigenvalue.
       Dict.getMaxEigVal()
       self.L = Dict.maxEig
@@ -143,7 +143,7 @@ class ENCODER(nn.Module):
 
     # -------------------------------------
     # Initialize FISTA-style (first order).
-    elif init_type= ='fista':
+    elif init_type=='fista':
       # Get the maximum eigenvalue.
       Dict.getMaxEigVal()
       self.L = Dict.maxEig
@@ -228,7 +228,7 @@ class ENCODER(nn.Module):
       tmp = yk - self.We(residual ) /self.L
       xk  = F.softshrink(tmp, lambd=self.thresh)
     # FISTA stepsize update:
-      tnext = (1 + ( 1 + 4 *( t* *2) )* *.5 ) /2
+      tnext = (1 + ( 1 + 4 *( t**2) )**.5 ) /2
       fact  = ( t -1 ) /tnext
     # Use momentum to update code estimate.
       yk    = xk + (xk -xprev) *fact
@@ -297,7 +297,7 @@ def encoder_class_sanity():
     x_true[batch][randi] = codeHeight *torch.rand(x_true[batch][randi].size()).to(device)
 
   # Create the dictionary.
-  D = dictionary(data_size, code_size, use_cuda=(device! ='cpu'))
+  D = dictionary(data_size, code_size, use_cuda=(device!='cpu'))
 
   # Create the observations based on signal model
   #    y = Dx + w
