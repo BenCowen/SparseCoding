@@ -143,7 +143,7 @@ class ENCODER(nn.Module):
 
     # -------------------------------------
     # Initialize FISTA-style (first order).
-    elif init_typ e= ='fista':
+    elif init_type= ='fista':
       # Get the maximum eigenvalue.
       Dict.getMaxEigVal()
       self.L = Dict.maxEig
