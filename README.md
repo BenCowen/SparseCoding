@@ -45,8 +45,9 @@ Tools I'm working on:
 From `SparseCoding` base dir:
 
 * Unit Tests: `python test_all_unit_tests.py`
-* Train convolutional dict on Celeb dataset: `python bin/run.py 
-  --config="experiments/convDictLearning.yml"`
+* Train a linear dictionary on the Celeb dataset: `python bin/run.py 
+  --config="experiments/train-linear-dict.yml "`
+  
 # Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
 For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
