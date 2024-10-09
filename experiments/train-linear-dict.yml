@@ -8,7 +8,7 @@
 
 # Experiment settings
 experiment-name: celeb-dict-train
-save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\celeb-dict-sgd5"
+save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\celeb-dict-p32-l1_5"
 device: &device "cuda:0"
 allow-continuation: True
 seed-config:
@@ -32,8 +32,8 @@ tasks:
         batch-size: 64
         post-load-transforms: &postloadtransforms
           OverlappingPatches:
-            patch-size: 16
-            overlap-percentage: 0.25
+            patch-size: 32
+            overlap-percentage: 0.2
             vectorize: True
 
   # Decoder
@@ -48,8 +48,8 @@ tasks:
           module: lib.model_blocks.dictionary
           kwargs:
             device: *device
-            data_dim: &data-dim 256
-            code_dim: &code-dim 100
+            data_dim: &data-dim 1024
+            code_dim: &code-dim 256
 
   # Encoder
   - nickname: SetupEncoder
@@ -82,7 +82,7 @@ tasks:
       dataset_name: *dataset-name
       # Hyperparameters
       max_epoch: 100
-      batches_per_epoch: 100 # Cut out early
+      batches_per_epoch: 250 # Cut out early
       # Model pointers
       encoder_config:
         stuff-name: *encoder-name
@@ -106,7 +106,7 @@ tasks:
           kwargs:
             input_keys:
               - code
-            weight: 2.5
+            weight: 5
             batch_norm: True
       post_load_transforms: *postloadtransforms
 

@@ -10,12 +10,15 @@ Custom on-the-fly image transformations
 import torch
 import torch.nn.functional as F
 
+
 # MISC FCNS
 def get_sparsity_ratio(codes):
     return codes.abs().gt(0).sum().detach().item() / codes.numel()
 
+
 def add_frame(img, n_pix, fill_val=1):
     return F.pad(img, (n_pix, n_pix, n_pix, n_pix), value=fill_val)
+
 
 # DEVICE
 class AddToDevice(object):
@@ -54,21 +57,20 @@ class OverlappingPatches(object):
         # Pad image to be a multiple of the patch size and unfold into
         #   (batch x channel x sqrt{n-patch}?? x sqrt{n-patch}?? x psz x psz):
         # Note: using negative indices doesn't work as with indexing on unfold...
-        col_dim = img.ndim-1
-        row_dim = img.ndim-2
+        col_dim = img.ndim - 1
+        row_dim = img.ndim - 2
         pad_col = img.shape[col_dim] % self.psz // 2
         pad_row = img.shape[row_dim] % self.psz // 2
         patches = F.pad(img, (pad_col, pad_col,
                               pad_row, pad_row,
                               0, 0)).unfold(col_dim, self.psz, self.stride) \
-                                    .unfold(row_dim, self.psz, self.stride).contiguous()
+            .unfold(row_dim, self.psz, self.stride).contiguous()
         # \
         # (patches - torch.mean(patches, (4, 5), keepdim=True)) \
         # .repeat(1, 1, 1, 1, self.psz, self.psz)
         # Window and return:
         # self.win_patches.repeat(1, 1, patches.shape[2], patches.shape[3], 1, 1).contiguous() * patches
         return self.vectorize(patches.transpose(-2, -1))
-
 
     def fold(self, vectorized_patches, img_shape):
         """
@@ -82,12 +84,13 @@ class OverlappingPatches(object):
         bsz = vectorized_patches.shape[0]
         nc = vectorized_patches.shape[1]
         # Combine patch dimensions:
-        batch_patch_per_channel = vectorized_patches.view(bsz, nc, -1, self.psz*self.psz
+        batch_patch_per_channel = vectorized_patches.view(bsz, nc, -1, self.psz * self.psz
                                                           ).permute(1, 0, 3, 2).contiguous()
         # Do color channels separately:
         pp5 = []
         for channel in range(nc):
-            pp5.append(F.fold(batch_patch_per_channel[channel], output_size=img_shape, kernel_size=self.psz, stride=self.stride))
+            pp5.append(F.fold(batch_patch_per_channel[channel], output_size=img_shape, kernel_size=self.psz,
+                              stride=self.stride))
         images = torch.cat(pp5, 1)
         return images
 
@@ -101,6 +104,6 @@ class OverlappingPatches(object):
         att_name = f'normalizer_{full_shape}'.replace(".", "_")
         if not hasattr(self, att_name):
             setattr(self, att_name, self.fold(self(
-                                          torch.ones(full_shape)),
-                                          full_shape[-2:]).to(device))
+                torch.ones(full_shape)),
+                full_shape[-2:]).to(device))
         return getattr(self, att_name)
