@@ -1,14 +1,25 @@
 # About
-All day, every day we unconsciously segment the world into tidy pieces.
+All day, every day we unconsciously segment 
+the world into tidy pieces.
 
-From distinguishing and identifying elements of the physical space around us to breaking down abstract ideas into something more familiar-- decomposition on all planes of conception is fundamental to our brains.
+From distinguishing and identifying elements 
+of the physical space around us to breaking 
+down abstract ideas into something more 
+familiar-- decomposition on all planes of conception is fundamental to our brains.
 
 
 In mathematical signal processing we use a wide variety of approaches to replicating this automatic decomposition in computer programs.
-There are techniques that simply compute the axes of highest variation amongst data (like Principal Component Analysis), and there are techniques that seek to parameterize human knowledge in order to pull out interpretable components (like [Morphological Component Analysis](https://arxiv.org/abs/2208.06056)).
-There are more explicit approaches like mathematically beamforming data streams to isolate different source signals, and there are more implicit ones like training self-supervised neural networks to encode latent axes of interest as they see fit.
+There are techniques that simply separate components along axes of highest variation amongst (eg 
+Principal Component Analysis), and there are nonlinear techniques that seek to parameterize 
+these axes so as to  pull out interpretable components (like [Morphological 
+Component Analysis](https://arxiv.org/abs/2208.06056)). There are more explicit approaches like 
+mathematically beamforming data streams in order to isolate different source signals, and there are 
+more implicit ones like training self-supervised neural networks to encode latent axes of 
+interest as they see fit.
 
-Welcome to my personal PyTorch library for exploring some of these concepts (and to host unit-tested code for reproducing results from [my PhD thesis](https://www.proquest.com/openview/6821866ac2a973b555473b2376dc61f3/1?pq-origsite=gscholar&cbl=18750&diss=y)).
+Welcome to my personal PyTorch library for exploring some of these concepts (and to host
+unit-tested code for reproducing results
+from [my PhD thesis](https://www.proquest.com/openview/6821866ac2a973b555473b2376dc61f3/1?pq-origsite=gscholar&cbl=18750&diss=y)).
 
 Some tools herein:
 - dictionary learning
@@ -20,23 +31,33 @@ Tools I'm working on:
 - morphological component analysis tools
 - [Beyond Backprop](https://arxiv.org/abs/1806.09077) style layer-parallelized training
 
-## Some preliminary visualizations
-<p align="center">
- <img src="SCRATCH/celeb-dict-mse/loss_history.png" width="375" height="375"/>
-  <img src="SCRATCH/celeb-dict-mse/dict_hist/top100atoms_e3.png" width="375" height="375"/>
-</p>
+[//]: # (## Some preliminary visualizations)
+
+[//]: # (<p align="center">)
+
+[//]: # ( <img src="SCRATCH/celeb-dict-mse/loss_history.png" width="375" height="375"/>)
+
+[//]: # (  <img src="SCRATCH/celeb-dict-mse/dict_hist/top100atoms_e3.png" width="375" height="375"/>)
+
+[//]: # (</p>)
 
 # Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
 For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
-At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for thousands of pixels.
-This is a rudimentary example of "sparse representation"-- i.e., if we have a *dictionary* of shapes and curves, 
+At least, that is more efficient than "pixel 1: value 0.1. Pixel 2: value 1" and so on for 
+thousands or millions of pixels.
+This is a toy example of "sparse representation"-- i.e., if we have a *dictionary* of shapes and 
+curves, 
 we can often describe an image as a weighted-sum of those dictionary elements. The fewer the number of dictionary atoms used, 
-the more efficient/sparse the representation is. We refer to the list of weights to use as a *code*, and it is *sparse*
-when most of its weights are zero.
+the more efficient or *sparse* the representation is. With a list of dictionary atoms we can 
+then write the corresponding list of weights (or coefficients), this list is a vector called the 
+code. Codes are specific to dictionaries, and when they are mostly zeroes, we call them *sparse*.
 
-*Sparse coding* is the problem of generating a dictionary from which sparse codes can be computed for every sample of
-a given dataset.
+*Sparse coding* is the problem of generating a dictionary and set of corresponding codes for a 
+dataset. The idea that, since the  codes will share a common "language" via the dictionary, it 
+can be represented more efficiently than the original dataset. You can also take a look at which 
+dictionary atoms are most important, which circle back to signal decomposition as discussed above.
+
 This repository provides some tools and classes for various sparse coding experiments.
 As of now, the focus is on learning a linear dictionary (e.g. for vectors, including vectorized image patches) from data.
 The training process yields a dictionary-- i.e. a matrix, whose rows are the dictionary elements-- which can be used along with a sparse code to represent a signal.
@@ -45,11 +66,18 @@ The training process yields a dictionary-- i.e. a matrix, whose rows are the dic
 ![asirra16](legacy-code/paramSearchResults/ASIRRA16_0000.png)
 ![F-mnist10](legacy-code/paramSearchResults/FashionMNIST10_0220.png)
 
-CIFAR, ASIRRA-, and Fashion-MNIST-based atoms, with patch-sizes 10x10, 16x16, and 10x10, respectively.
+CIFAR-, ASIRRA-, and Fashion-MNIST-based atoms, with patch-sizes 10x10, 16x16, and 10x10, 
+respectively.
 
 This procedure is originally described in "Emergence of simple-cell receptive field properties by learning a sparse code for natural images", by Olshausen and Field [Nature, 381:607–609, 1996](https://www.nature.com/articles/381607a0).
-It is famously used in "Learning Fast Approximations of Sparse Coding" (Gregor and Lecun)
- and recently in "LSALSA: efficient sparse coding in single and multiple dictionary settings" ([Cowen, Saridena, Choromanska](https://arxiv.org/abs/1802.06875)).
+It is famously used in "Learning Fast Approximations of Sparse Coding" (Gregor and Lecun), which 
+inspired more recent papers, i.e.
+* "LSALSA: efficient sparse coding in single and multiple dictionary 
+settings" ([Cowen, Saridena, Choromanska](https://arxiv.org/abs/1802.06875))
+* "Approximate extraction of late-time returns via morphological component analysis" ([Goehle, 
+  Cowen, et al.](https://arxiv.org/abs/2208.06056))
+* "Phenomenology Based Decomposition of Sea Clutter with a Secondary Target Classifier" ([Farschian, Cowen, Selesnick](https://ieeexplore.ieee.org/abstract/document/10149773))
+* "Joint Sparse Coding and Frame Optimization"  ([Goehle, Cowen](https://ieeexplore.ieee.org/document/10382582))
 
 We train by minimizing<a href="https://www.codecogs.com/eqnedit.php?latex=F" target="_blank"><img src="https://latex.codecogs.com/gif.latex?F" title="F" /></a>
 with respect to the matrix/dictionary/decoder <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{A}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{A}" title="\mathbf{A}" /></a>
@@ -101,12 +129,21 @@ In other words, the sparse vector <a href="https://www.codecogs.com/eqnedit.php?
 multiplied with the (learned) dictionary <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{A}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{A}" title="\mathbf{A}" /></a>
 provides an efficient approximation to the signal <a href="https://www.codecogs.com/eqnedit.php?latex=\mathbf{y}(p)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\mathbf{y}(p)" title="\mathbf{y}(p)" /></a>.
 
-### TO-DO
-* save dictionary objects
-* put lua version on (maybe...)
-* color version
-* training script for encoders
-* re-formulate "learned FISTA"
-* look into SSNAL (see past team emails)
-* C++ Tensorflow framework....!
-)
+[//]: # (### TO-DO)
+
+[//]: # (* save dictionary objects)
+
+[//]: # (* put lua version on &#40;maybe...&#41;)
+
+[//]: # (* color version)
+
+[//]: # (* training script for encoders)
+
+[//]: # (* re-formulate "learned FISTA")
+
+[//]: # (* look into SSNAL &#40;see past team emails&#41;)
+
+[//]: # (* C++ Tensorflow framework....!)
+
+[//]: # ()
+
