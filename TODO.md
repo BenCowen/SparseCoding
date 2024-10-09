@@ -7,13 +7,11 @@ idea: do dict learning on speech spectra
     1. ~~Make FISTA work (unit test/toy problem)~~
     2. ~~(A) Make L-FISTA work (unit test/toy problem)~~
     2. ~~(B) (L)ISTA (subclass FISTA or vice versa)~~
-    3. Set up dataloader system on mnist+asirra. Encoder/decoder pair owned by dataset?...
-                 or dict point to an encoder and a dataset....
-                Define trn/tst datasets that get re-used, avoiding train/test leakage.
-       1. Figure out the EMG dataset a lil... some viz for github
-          1. 2D complex dict on spectrograms that are overlapped?... but then how reconstruct?
-       2. unit test dataloader...
-       2. atom visualizer
+    3. Make a basic dict learning demo
+    4. Make a convolutional dict learning demo 
+    4. Multi-dataset dataloader for mnist+asirra.
+            2. unit test dataloader...
+            2. atom visualizer
     4. Combine into config system. Train a linear dictionary on medium data (e.g. mnist, cifar)
     5. Train L-FISTA and show it's as good + faster than FISTA. Compare with generic neural net (CNN) encoder.
             (wallclock plots, sparsity plots: cloud/histogram;; unit-test viz suite?)
@@ -29,6 +27,11 @@ idea: do dict learning on speech spectra
    10. Encoder subclass for saving + optimizing codes (unit-test)
    11. Alt-min style: joint dict/LFista coolness (...or is that implicit?)
    12. Update blog (maybe separate blog)
+
+[//]: # (       1. Figure out the EMG dataset a lil... some viz for github)
+
+[//]: # (          1. 2D complex dict on spectrograms that are overlapped?... but then how reconstruct?)
+
 
 ## PHASE 1:
 **Make it public-ready:**

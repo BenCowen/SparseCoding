@@ -6,6 +6,7 @@ EXTRA:
 @author: BenJammin
 """
 from FISTA import FISTA
+import torch.nn as nn
 
 class Encoder:
     # If you want to train a layer as a dictionary, i.e. treating its

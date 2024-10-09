@@ -8,49 +8,58 @@ Dictionary learning with fixed encoder.
 
 import gc
 import torch
-import types
 import lib.UTILS.path_support as torch_aux
-from lib.UTILS.path_support import import_from_specified_class
 from lib.UTILS.image_transforms import OverlappingPatches, get_sparsity_ratio
 from lib.UTILS.visualizer import Visualizer
-from lib.trainers.trainer_abc import Trainer
+from lib.tasks.trainer_abc import Trainer
+from typing import List, Dict
+from pathlib import Path
+from tqdm import tqdm
 
-
-class DictionaryLearning(Trainer):
+class DictionaryPatchTrainer(Trainer):
     """
     Use stochastic optimization to train a dictionary of atoms for sparse reconstruction.
     """
 
-    def __init__(self, config):
-        super(DictionaryLearning, self).__init__(config)
+    def __init__(self,
+                 post_load_transforms: Dict = None,
+                 encoder_config: Dict = None,
+                 decoder_config: Dict = None,
+                 dataset_name: str = None,
+                 save_dir: str = None,
+                 loss_config: List = None,
+                 **kwargs):
+        super(DictionaryPatchTrainer, self).__init__(**kwargs)
+        self.encoder_config = encoder_config
+        self.decoder_config = decoder_config
         self.recon_example = None
-        self.Patcher = None
+        self.Patcher = OverlappingPatches(post_load_transforms['OverlappingPatches'])
         self.viz = None
-        self.encoder = self.initialize_encoder(self.config['model-config'])
+        self.dataset_name = dataset_name
+        self.save_dir = Path(save_dir)
+        self.loss_config = loss_config
 
-    def initialize_encoder(self, model_config):
-        # Need to add some things to encoder config so it's consistent with the model:
-        self.config['encoder-config']['data-len'] = model_config['data-len']
-        self.config['encoder-config']['code-len'] = model_config['code-len']
-        self.config['encoder-config']['device'] = model_config['device']
-        self.encoder = import_from_specified_class(self.config, 'encoder')
-
-    def train(self, model, dataset, loaded_objects={}):
+    def run_task(self, loaded_objects):
         """ Train the dictionary! """
+
         # Initialize Visualizer
-        self.viz = Visualizer(self.config['save-dir'])
-        self.Patcher = OverlappingPatches(self.config['post-load-transforms']['OverlappingPatches'])
-        # Configure GPU usage with pinned memory dataloader
-        model = model.to(self.config['device'], non_blocking=True)
-        self.encoder = self.encoder.to(self.config['device'], non_blocking=True)
+        self.viz = Visualizer(self.save_dir)
 
-        # Assign loss function to self:
-        loss_fcn = torch_aux.generate_loss_function(self.config['loss-config'], dataset)
-        n_batches = min(self.max_batches, len(dataset.train_loader))
-        self.batches_per_print = n_batches//self.prints_per_epoch
+        # Extract models
+        self.model = loaded_objects[self.decoder_config['stuff-name']]
+        self.encoder = loaded_objects[self.encoder_config['stuff-name']]
 
-        # Initialize the optimizer for our model
-        self.optimizer, self.scheduler = torch_aux.setup_optimizer(self.config['optimizer-config'], model)
+        # Dataloader
+        dataset = loaded_objects[self.dataset_name]
+
+        # Setup optimizer
+        self.optimizer, self.scheduler = self.setup_optimizer(self.decoder_config['optimizer-config'],
+                                                              self.model)
+
+        # Setup loss fcn:
+        loss_fcn = self.generate_loss_function(self.loss_config)
+        n_batches = min(self.max_batches,
+                        len(dataset.train_loader))
 
         # Keep record of the training process
         self.training_record = {'epoch': 0,
@@ -62,29 +71,35 @@ class DictionaryLearning(Trainer):
 
         while self.epoch < self.max_epoch:
             # Visualizations each epoch:
-            self.epoch_visualizations(model, dataset.valid_loader)
+            self.epoch_visualizations(self.model,
+                                      dataset.valid_loader)
             self.training_record['epoch'] = self.epoch
             # Add an epoch to the record:
             self.training_record['loss-hist'].append([])
             self.training_record['sparsity-hist'].append([])
-            for batch_idx, (batch, _) in enumerate(dataset.train_loader):
+            epoch_loop = tqdm(enumerate(dataset.train_loader),
+                              total=n_batches,
+                              desc=f"Epoch {self.epoch}")
+            for batch_idx, (batch, _) in epoch_loop:
                 # Reshape channel and patch dimensions into batch dimension
-                batch = batch.to(self.config['device'], non_blocking=True)
+                batch = batch.to(self.model.device, non_blocking=True)
                 patches = self.Patcher(batch)
                 # f batch_idx > 2:
                 #     break
 
                 # Code inference (encode the batch)
                 with torch.no_grad():
-                    model.normalize_columns()
-                    self.encoder.update_encoder_with_dict(model)
+                    self.model.normalize_columns()
+                    self.encoder.sync_to_decoder(self.model)
                     opt_codes = self.encoder(patches.view(-1, patches.shape[-1]))
 
                 # Encoder Optimization
                 # Forward pass
-                est_patches = model(opt_codes).view(patches.shape)
+                est_patches = self.model(opt_codes).view(patches.shape)
                 est_batch = self.Patcher.reconstruct(est_patches, batch.shape[-2:])
-                loss_value = loss_fcn(batch, est_batch, opt_codes)
+                loss_value = loss_fcn({'target': batch,
+                                       'recon': est_batch,
+                                       'code': opt_codes})
 
                 # Backward pass:
                 self.optimizer.zero_grad()
@@ -96,24 +111,29 @@ class DictionaryLearning(Trainer):
                 # Logistics
                 with torch.no_grad():
                     loss_value_item = loss_value.detach().item()
-                    last_sparsity = get_sparsity_ratio(opt_codes)
+                    last_sparsity = 1-get_sparsity_ratio(opt_codes)
                     self.training_record['loss-hist'][-1].append(loss_value_item)
                     self.training_record['sparsity-hist'][-1].append(last_sparsity)
-                    self.batch_print(loss_value_item, batch_idx, n_batches,
-                                     other_prints={'Sparsity': last_sparsity})
+                    epoch_loop.set_postfix({'loss': f"{loss_value_item:.2E}",
+                                            'sparsity': f"{100*last_sparsity:.4f}%"})
                 if batch_idx > self.max_batches:
                     break
 
             # End epoch:
-            print("\tEPOCH {}/{} COMPLETE: Loss = {:.2E}, AVG-Sparsity = {:.2E}%".format(
-                self.epoch, self.max_epoch, sum(self.training_record['loss-hist'][-1]),
-                100 * sum(self.training_record['sparsity-hist'][-1]) / batch_idx))
+            avg_sp = 100 * sum(self.training_record['sparsity-hist'][-1]) / len(self.training_record['sparsity-hist'][-1])
+            print(f"EPOCH {self.epoch}/{self.max_epoch} COMPLETE: \n"
+                  f"\tTotal Loss = {sum(self.training_record['loss-hist'][-1]):.2E}\n"
+                  f"\tAVG-Sparsity = {avg_sp:.4f}%")
 
             # Save trainer
-            torch_aux.save_train_state(self.bb_config, model, self.training_record,
-                                       self.optimizer, self.scheduler)
+            self.save_train_state(self.model, self.training_record,
+                                  self.optimizer, self.scheduler)
 
             self.epoch += 1
+        # Done, return encoder, decoder
+        self.encoder.sync_to_decoder(self.model)
+        return {'trained-decoder': self.model,
+                'trained-encoder': self.encoder}
 
     @torch.no_grad()
     def epoch_visualizations(self, model, valid_loader):
@@ -137,7 +157,7 @@ class DictionaryLearning(Trainer):
         if self.recon_example is None:
             # Get a couple official samples that will be re-used for reconstruction visualization
             for batch, _ in valid_loader:
-                self.recon_example = batch[:4].to(self.config['device'], non_blocking=True)
+                self.recon_example = batch[:4].to(model.device, non_blocking=True)
                 break
             self.viz.array_plot(self.recon_example.view(2, 2, 3,
                                                         self.recon_example.shape[-2],
@@ -148,7 +168,7 @@ class DictionaryLearning(Trainer):
 
         # Encode the data and rank the atoms in terms of heaviest usage:
         model.normalize_columns()
-        self.encoder.update_encoder_with_dict(model)
+        self.encoder.sync_to_decoder(model)
         patches = self.Patcher(self.recon_example)
         codes = self.encoder(patches.view(-1, patches.shape[-1]), n_iters=100)
         # Collapse data dimension to get total coefficient power:

@@ -13,6 +13,8 @@ from lib.model_blocks.dictionary import Dictionary
 import torch
 import torch.nn.functional as th_fcn
 import copy
+from typing import Dict
+from lib.UTILS.path_support import import_class_kwargs
 
 
 class FISTA(AlgorithmBlock):
@@ -24,25 +26,26 @@ class FISTA(AlgorithmBlock):
     """
 
     def __init__(self,
-                 data_len: int,
-                 code_len: int,
+                 data_dim: int,
+                 code_dim: int,
                  n_iter: int,
                  sparsity_weight: float,
                  trainable: bool = False,
                  init_dict: AlgorithmBlock = None,
                  non_blocking: bool = True,
+                 decoder_config: Dict = None,
                  device: str = 'cpu'):
         """
-        data_len: scalar, length of one data sample
-        code_len: scalar, length of the code of one data sample
+        data_dim: scalar, dim of one data sample
+        code_dim: scalar, dim of the code of one data sample
         n_iters: number of iterations to run FISTA
         sparsity_weight: balancing weight for L1
         """
         super(FISTA, self).__init__()
 
         # Logistics
-        self.data_len = data_len
-        self.code_len = code_len
+        self.data_dim = data_dim
+        self.code_dim = code_dim
         self.trainable = trainable
 
         # Initialize
@@ -55,13 +58,14 @@ class FISTA(AlgorithmBlock):
         if init_dict is not None:
             self.decoder = copy.deepcopy(init_dict)
         else:
-            self.decoder = Dictionary(code_len, data_len, device, non_blocking)
+            maker, kwargs = import_class_kwargs(decoder_config)
+            self.decoder = maker(**kwargs)
             self.decoder.normalize_columns()
 
         # Encoder Initialization
-        self.encoder = torch.nn.Linear(self.data_len, self.code_len, bias=False, device=self._device)
-        self.encoder.weight.data = self.decoder.We()
-        self._max_eig = self.decoder.get_max_eig_val()
+        self.encoder = None
+        self._max_eig = None
+        self.sync_to_decoder()
         self.set_grad()
 
     def set_grad(self):
@@ -70,14 +74,18 @@ class FISTA(AlgorithmBlock):
         else:
             self.turn_grad_off()
 
-    def update_encoder_with_dict(self, decoder):
-        self.decoder = decoder
-        self.encoder.weight.data = self.decoder.We()
+    def sync_to_decoder(self, decoder=None):
+        """formerly update_encoder_with_dict"""
+        if decoder is not None:
+            self.decoder = decoder
+        self.encoder = self.decoder.get_encoder()
         self._max_eig = self.decoder.get_max_eig_val()
 
+    @property
     def Wd(self):
-        return self.decoder.Wd()
+        return self.decoder.Wd
 
+    @property
     def We(self):
         return self.encoder.weight.data.detach()
 
@@ -123,7 +131,7 @@ class FISTA(AlgorithmBlock):
     def recordLoss(self, data, xk, it):
         """ MSE between data,xk + L1 norm of xk, averaged over batchsize"""
         self.loss_hist[it] = ((0.5 * (data - self.decoder(xk)).pow(2).sum().item() +
-                                   xk.abs().sum().detach().item())) / data.shape[0]
+                               xk.abs().sum().detach().item())) / data.shape[0]
 
 
 class ISTA(FISTA):
@@ -132,10 +140,14 @@ class ISTA(FISTA):
     def __init__(self, **kwargs):
         super(ISTA, self).__init__(**kwargs)
         # Same init as FISTA except some normalization, and S matrix.
-        self.S = torch.nn.Linear(self.code_len, self.code_len, bias=False)
-        with torch.no_grad():
-            self.S.weight.data = torch.eye(self.code_len) - torch.mm(self.We(), self.Wd()) / self._max_eig
+        if isinstance(self.decoder.decoder, torch.nn.Linear):
+            self.S = torch.nn.Linear(self.code_dim, self.code_dim, bias=False)
+            with torch.no_grad():
+                self.S.weight.data = torch.eye(self.code_dim) - \
+                                     torch.mm(self.We, self.Wd) / self._max_eig
             self.encoder.weight.data /= self._max_eig
+        else:
+            raise NotImplementedError("Haven't implemented convolutional ISTA yet...")
         self.set_grad()
 
     def forward(self, data):
@@ -146,6 +158,6 @@ class ISTA(FISTA):
         # Iterations.
         for it in range(self.n_iters):
             xk = th_fcn.softshrink(noisy_code + self.S(xk),
-                                   lambd=self.sparsity_weight / (2*self._max_eig))
+                                   lambd=self.sparsity_weight / (2 * self._max_eig))
             self.recordLoss(data, xk, it)
         return xk

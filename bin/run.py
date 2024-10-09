@@ -15,7 +15,7 @@ import lib.UTILS.rng_control as rng_control
 parser = argparse.ArgumentParser(description="Sparse Coding Library")
 
 parser.add_argument('--config-file', metavar="c", type=str,
-                    default=os.path.join('experiments', 'demo.yml'))
+                    default=os.path.join('experiments', 'train-linear-dict.yml'))
 
 if __name__ == "__main__":
     args = parser.parse_args()

@@ -28,8 +28,8 @@ class UnrolledAlgorithmTester(unittest.TestCase):
     def __init__(self, make_plots=True, verbose=True):
         unittest.TestCase.__init__(self)
         # Same data, same cost function:
-        self.problem_params = {'data_len': 64,
-                               'code_len': 128,
+        self.problem_params = {'data_dim': 64,
+                               'code_dim': 128,
                                'sparsity_weight': 0.5,
                                'n_iter': 250}
 
@@ -63,7 +63,7 @@ class UnrolledAlgorithmTester(unittest.TestCase):
         # Save for later:
         self.convex_solutions['fista'] = est_code
 
-    def test_ista(self):
+    def test_ista(self, conv=False):
         self.tester_settings['gd_learnrate'] = 0.0025
         fix_loss_chg, fix_recon_err, lrn_recon_err, training_loss_change, est_code = encoder_test(
             ISTA,
@@ -86,17 +86,23 @@ class UnrolledAlgorithmTester(unittest.TestCase):
             for key2 in algo_names[(idx1 + 1):]:
                 rel_recon_err = ((self.convex_solutions[key1] - self.convex_solutions[key2]).pow(2).sum().item() /
                                  (self.convex_solutions[key2].pow(2).sum().item() *
-                                 self.convex_solutions[key1].shape[0]))
+                                  self.convex_solutions[key1].shape[0]))
                 print(f'\t||{key1} - {key2}||^2 / (bsz*||{key2}||^2) = {rel_recon_err:.2E}')
                 self.assertTrue(rel_recon_err < self._recon_rel_err_tol,
                                 f'{key1} and {key2} converged to different solutions!')
 
     def runTest(self):
+        #########################################
+        # Solver Tests
         # Component tests:
         self.test_ista()
         self.test_fista()
+
         # Composite tests:
         self.composite_test_convexity()
+
+        #########################################
+        # Pipeline integ test
 
 
 if __name__ == "__main__":
