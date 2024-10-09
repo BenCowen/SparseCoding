@@ -109,3 +109,28 @@ tasks:
 #      post-load-transforms: *postloadtransforms
 #      device: *device
 #      save-dir: *savedir
+#
+#trainer-config:
+#  class: SslTrainer
+#  module: lib.trainers.ssl_trainer
+#  max-epoch: 10000
+#  batches-per-epoch: 99999 # Cut out early
+#  prints-per-epoch: 4
+#  loss-config:
+#    torch-loss:
+#      MSELoss: {}
+#    custom-loss:
+#      Kld2N01:
+#        kld_weight: 0.001
+#  optimizer-config:
+#    class: Adam
+#    kwargs:
+#      lr: 0.0005
+#    scheduler-config:
+#      class: StepLR
+#      step-size: 10
+#      kwargs:
+#        gamma: 0.925
+#  post-load-transforms: *postloadtransforms
+#  device: *device
+#  save-dir: *savedir

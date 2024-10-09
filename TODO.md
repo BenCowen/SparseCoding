@@ -1,8 +1,3 @@
-# feb2024
-1. check stuff below
-2. "Take your time and THINK": variable length foward propagation in small architectures
-   1. tiny convex rnns as variable complexity neuron bundles 
-
 
 ## PHASE 0
 **Pull ENTIRE thread on L-FISTA:**
@@ -61,6 +56,8 @@ idea: do dict learning on speech spectra
 1. joint dictionary learning for MCA
 2. use linear dictionaries to guide activation (or saliency) maps of less-interpretable architectures
 3. extension of beyond-backprop to multi-task/objective?
+4. "Take your time and THINK": variable length foward propagation in small architectures
+   1. tiny convex rnns as variable complexity neuron bundles 
 
 [//]: # ()
 [//]: # (----------------------------------------------------)

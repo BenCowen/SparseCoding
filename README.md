@@ -1,6 +1,8 @@
 # About
 All day, every day we unconsciously segment the world into tidy pieces.
-From distinguishing and identifying elements of the physical space around us to breaking down abstract ideas into familiar units-- decomposition on all planes of conception is fundamental to our brains.
+
+From distinguishing and identifying elements of the physical space around us to breaking down abstract ideas into something more familiar-- decomposition on all planes of conception is fundamental to our brains.
+
 
 In mathematical signal processing we use a wide variety of approaches to replicating this automatic decomposition in computer programs.
 There are techniques that simply compute the axes of highest variation amongst data (like Principal Component Analysis), and there are techniques that seek to parameterize human knowledge in order to pull out interpretable components (like [Morphological Component Analysis](https://arxiv.org/abs/2208.06056)).
@@ -11,6 +13,8 @@ Welcome to my personal PyTorch library for exploring some of these concepts (and
 Some tools herein:
 - dictionary learning
 - differentiable convex optimization algorithms (AKA "unrolled" learnable encoders, e.g. [LISTA](https://icml.cc/Conferences/2010/papers/449.pdf),  [LSALSA](https://arxiv.org/abs/1802.06875))
+- Variational Autoencoder
+- some Python wrappers for SQL
 
 Tools I'm working on:
 - morphological component analysis tools
