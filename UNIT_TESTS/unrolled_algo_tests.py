@@ -42,7 +42,7 @@ def encoder_test(encoder_class, encoder_args, test_settings):
     proj_control.reproducibility_mode()
 
     # Initialize dictionary first so test signal is reproducible:
-    decoder = Dictionary(config=encoder_args)
+    decoder = Dictionary(**encoder_args)
     decoder.normalize_columns()
 
     # Set up training data
@@ -55,7 +55,8 @@ def encoder_test(encoder_class, encoder_args, test_settings):
 
     # Initialize the encoder
     encoder_args['init_dict'] = decoder
-    encoder = encoder_class(encoder_args, trainable=False)
+    encoder_args['trainable'] = False
+    encoder = encoder_class(**encoder_args)
 
     # Encode
     fixed_code_est = encoder(train_data)

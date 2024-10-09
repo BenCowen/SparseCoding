@@ -23,7 +23,15 @@ class FISTA(AlgorithmBlock):
       where A is a sparse transform matrix.
     """
 
-    def __init__(self, config, trainable=False, init_dict=None, device='cpu'):
+    def __init__(self,
+                 data_len: int,
+                 code_len: int,
+                 n_iter: int,
+                 sparsity_weight: float,
+                 trainable: bool = False,
+                 init_dict: AlgorithmBlock = None,
+                 non_blocking: bool = True,
+                 device: str = 'cpu'):
         """
         data_len: scalar, length of one data sample
         code_len: scalar, length of the code of one data sample
@@ -33,24 +41,21 @@ class FISTA(AlgorithmBlock):
         super(FISTA, self).__init__()
 
         # Logistics
-        self.data_len = config['data-len']
-        self.code_len = config['code-len']
-        if 'trainable' in config:
-            self.trainable = config['trainable']
-        else:
-            self.trainable = trainable
+        self.data_len = data_len
+        self.code_len = code_len
+        self.trainable = trainable
 
         # Initialize
-        self.n_iters = config['n-iters']
-        self.sparsity_weight = config['sparsity-weight']
+        self.n_iters = n_iter
+        self.sparsity_weight = sparsity_weight
         self.loss_hist = torch.full((self.n_iters,), torch.nan)
 
         # Dictionary Initialization
-        self._device = config['device']
+        self._device = device
         if init_dict is not None:
             self.decoder = copy.deepcopy(init_dict)
         else:
-            self.decoder = Dictionary(config)
+            self.decoder = Dictionary(code_len, data_len, device, non_blocking)
             self.decoder.normalize_columns()
 
         # Encoder Initialization

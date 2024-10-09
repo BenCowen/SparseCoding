@@ -31,7 +31,7 @@ class UnrolledAlgorithmTester(unittest.TestCase):
         self.problem_params = {'data_len': 64,
                                'code_len': 128,
                                'sparsity_weight': 0.5,
-                               'n_iters': 250}
+                               'n_iter': 250}
 
         self.tester_settings = {'make_plots': make_plots,
                                 'verbose': verbose,

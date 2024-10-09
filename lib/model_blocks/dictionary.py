@@ -18,12 +18,10 @@ class Dictionary(AlgorithmBlock):
     Points to dataset and encoding algorithm used to generate it.
     """
 
-    def __init__(self, config, non_blocking=True):
+    def __init__(self, code_len, data_len, device='cpu', non_blocking=True, **kwargs):
         super(Dictionary, self).__init__()
-        code_len = config['code-len']
-        data_len = config['data-len']
-        self.decoder = torch.nn.Linear(code_len, data_len, bias=False).to(config['device'])
-        self._device = config['device']
+        self.decoder = torch.nn.Linear(code_len, data_len, bias=False).to()
+        self._device = device
         self.non_blocking = non_blocking
 
     def forward(self, codes):

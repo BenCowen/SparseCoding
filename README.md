@@ -41,6 +41,10 @@ Tools I'm working on:
 
 [//]: # (</p>)
 
+# How to try the code
+From `SparseCoding` base dir:
+
+Tests: `python test_all_unit_tests.py`
 # Formal Sparse Coding Background
 It is often useful to represent a signal or image in terms of its basic building blocks.
 For example, a smiley-face can be efficiently described as "a circle, two dots, and a curve".
