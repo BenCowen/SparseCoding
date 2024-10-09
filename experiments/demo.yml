@@ -1,0 +1,74 @@
+#"""
+#Configuration file template.
+#
+#@author Benjamin Cowen
+#@date 7 Feb 2022
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: celeb-dict-train
+save-dir: "K:\\SparseCoding\\SCRATCH\\celeb-dict-sgd5" &savedir
+device: "cuda:0" &device
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+# Dataset
+data-config:
+  class: PyTorchDataset
+  module: lib.data_loaders.pytorch_datasets
+  data-dir: "K:\\DATASETS\\celeba"
+  device: *device
+  n-loader-workers: 4
+  # TODO: windowing might be pointless... focus on loss fcn applied to recon
+  image-size: 128
+  batch-size: 16
+  post-load-transforms: &postloadtransforms
+    OverlappingPatches:
+      patch-size: 16
+      overlap-percentage: 0.25
+      vectorize: True
+
+model-config: &modelconfig
+  class: Dictionary
+  module: lib.model_blocks.dictionary
+  device: *device
+  code-len: 768
+
+trainer-config:
+  class: DictionaryLearning
+  module: lib.trainers.dictionary_learning
+  max-epoch: 100
+  batches-per-epoch: 256 # Cut out early
+  prints-per-epoch: 5
+  loss-config:
+    torch-loss:
+      MSELoss: {}
+    custom-loss:
+#      SSIM:
+#        kernel-size: 18
+#        sigma: 1.5
+#      TV: {}
+#      L1: {}
+  optimizer-config:
+    class: SGD
+    kwargs:
+      lr: 0.005
+      momentum: 0.9
+      nesterov: True
+    scheduler-config:
+      class: StepLR
+      step-size: 10
+      kwargs:
+        gamma: 0.99
+  encoder-config:
+    class: FISTA
+    module: lib.model_blocks.ISTA
+    n-iters: 20
+    sparsity-weight: 0.5
+  model-config: *modelconfig
+  save-dir: *savedir
+  post-load-transforms: *postloadtransforms
+  device: *device

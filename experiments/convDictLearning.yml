@@ -1,0 +1,168 @@
+#"""
+# Dictionary Learning (fixed encoder)
+#
+#@author Benjamin Cowen
+#@date 4 Feb 2023
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: vae-ia
+save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\convdicts"
+device: &device "cuda:0"
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+tasks:
+  - nickname: SetupDataset
+    class: ReturnObject
+    module: lib.tasks.return_object
+    kwargs:
+      obj_name: &dataset-name dataloaders
+      obj_class: PyTorchDataset
+      obj_module: lib.data_loaders.pytorch_datasets
+      obj_config:
+        data-dir: "K:\\DATASETS\\celeba"
+        device: *device
+        n-loader-workers: 4
+        # TODO: windowing might be pointless... focus on loss fcn applied to recon
+        image-size: 128
+        batch-size: 16
+        post-load-transforms: &postloadtransforms
+          OverlappingPatches:
+            patch-size: 16
+            overlap-percentage: 0.25
+            vectorize: True
+
+  #      obj_class: GlitchDataLoader
+#      obj_module: lib.data_loaders.glitch_datasets
+#      obj_config:
+#        dataloader-kwargs:
+#          n-loader-workers: 4
+#          batch_size: 64
+#          shuffle: True
+#        random-add: 0.5
+#        load-transforms:
+#          Resize:
+#           size: &imgsize 256
+#          ToTensor: {}
+#          Normalize: {}
+#        post-load-transforms: &postloadtransforms
+#          OverlappingPatches:
+#            patch-size: 16
+#            overlap-percentage: 0.25
+#            vectorize: True
+#        device: *device
+
+  # Decoder
+  - nickname: SetupDecoder
+    class: GenerateModelFromBlocks
+    module: lib.model_blocks.model_builders
+    kwargs:
+      model_name: &decoder-name decoder
+      blocks:
+        - name: ConvDict
+          class: Conv2Dictionary
+          module: lib.model_blocks.dictionary
+          kwargs:
+            config:
+              device: *device
+              data-dim: &data-dim 1
+              code-dim: &code-dim 100
+              kernel-size: 10
+              conv-config: {}
+
+  # Encoder
+  - nickname: SetupEncoder
+    class: GenerateModelFromBlocks
+    module: lib.model_blocks.model_builders
+    kwargs:
+      model_name: &encoder-name encoder
+      blocks:
+        - name: ConvFista
+          class: FISTA
+          module: lib.model_blocks.ISTA
+          # Initialize with decoder
+          include-stuff:
+            - kwarg-name: init_dict
+              stuff-name: *decoder-name
+          kwargs:
+            config:
+              trainable: False
+              device: *device
+              n-iters: 100
+              sparsity-weight: 1
+              data-dim: *data-dim
+              code-dim: *code-dim
+
+  - nickname: Time2Train
+    class: EncodeDecodeTrainer
+    module: lib.trainers.encode_decode_trainer
+    kwargs:
+      config:
+        device: *device
+        save-dir: *savedir
+        dataset-name: *dataset-name
+        models:
+          encoder:
+            stuff-name: *encoder-name
+            training-steps-per-batch: 0
+            optimizer:
+              name: AdamW
+              kwargs:
+                lr: 0.001
+            scheduler:
+              name: ReduceLROnPlateau
+
+          decoder:
+            stuff-name: *decoder-name
+            optimizer:
+              name: AdamW
+              kwargs:
+                lr: 0.001
+        max-epoch: 100
+        batches-per-epoch: 256 # Cut out early
+        prints-per-epoch: 5
+        loss-config:
+          - config:
+              class: MSELoss
+              module: torch.nn
+              kwargs: {}
+            input-keys:
+              - recon
+              - target
+          - class: L1Loss
+            module: lib.trainers.custom_loss_functions
+            kwargs:
+              weight: 2
+              batch_norm: True
+            input-keys:
+              - code
+        post-load-transforms: *postloadtransforms
+
+
+
+      #        - class: StructuralSimilarityIndexMeasure
+      #          module: torchmetrics
+      #          kwargs:
+      #            batch_norm: True
+      #        - class: TV
+      #          module: lib.trainers.custom_loss_functions
+      #          kwargs:
+      #            weight: 2
+      #            batch_norm: True
+      #          input-keys:
+      #            - recon
+      #        - class: Kld2N01
+      #          module: lib.trainers.custom_loss_functions
+      #          kwargs:
+      #            weight: 2
+      #            batch_norm: True
+      #          input-keys:
+      #            - log_var
+      #            - mu
+
+
+

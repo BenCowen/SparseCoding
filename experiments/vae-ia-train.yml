@@ -1,0 +1,111 @@
+#"""
+#Configuration file for training VAE on inaccessible worlds database.
+#
+#@author Benjamin Cowen
+#@date 21 May 2023
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: vae-ia
+save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\inaccessible-worlds"
+device: &device "cuda:0"
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+tasks:
+  # Dataset
+  - class: ReturnObject
+    module: lib.tasks.return_object
+    kwargs:
+      obj_name: dataloaders
+      obj_class: GlitchDataLoader
+      obj_module: lib.data_loaders.glitch_datasets
+      obj_config:
+        dataloader-kwargs:
+          n-loader-workers: 4
+          batch_size: 64
+          shuffle: True
+        random-add: 0.5
+        load-transforms:
+          Resize:
+           size: &imgsize 256
+          ToTensor: {}
+          Normalize: {}
+        post-load-transforms: &postloadtransforms
+          OverlappingPatches:
+            patch-size: 16
+            overlap-percentage: 0.25
+            vectorize: True
+        device: *device
+
+  # Dataset
+  - class: GenerateModelFromBlocks
+    module: lib.model_blocks.model_builders
+    kwargs:
+      model_name: ConvFista
+      blocks:
+        - name: Encoder
+          class: FISTA
+          module: lib.model_blocks.ISTA
+          kwargs:
+            trainable: False
+            device: *device
+            n-iters: 100
+            sparsity-weight: 1
+            decoder_config:
+              code-dim: 100
+              data-dim: 1
+              kernel-size: 10
+              conv-config: {}
+
+#
+#        class: VanillaVae
+#        module: lib.model_blocks.variational_autoencoders
+#        in-channels: 3
+#        hidden-sizes:
+#          - 16
+#          - 32
+#          - 64
+#          - 128
+#          - 256
+#          - 512
+#          - 512
+#        latent-dim: 128
+#        cnn-kwargs:
+#          kernel_size: 3
+#          stride: 2
+#          padding: 1
+#        print: False
+#        device: *device
+#
+#
+#  # Dataset
+#  - class: ReturnObject
+#    module: lib.tasks.return_object
+#    kwargs:
+#      class: SslTrainer
+#      module: lib.trainers.ssl_trainer
+#      max-epoch: 10000
+#      batches-per-epoch: 99999 # Cut out early
+#      prints-per-epoch: 4
+#      loss-config:
+#        torch-loss:
+#          MSELoss: {}
+#        custom-loss:
+#          Kld2N01:
+#            kld_weight: 0.001
+#      optimizer-config:
+#        class: Adam
+#        kwargs:
+#          lr: 0.0005
+#        scheduler-config:
+#          class: StepLR
+#          step-size: 10
+#          kwargs:
+#            gamma: 0.925
+#      post-load-transforms: *postloadtransforms
+#      device: *device
+#      save-dir: *savedir
