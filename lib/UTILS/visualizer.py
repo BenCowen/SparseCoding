@@ -46,9 +46,9 @@ class Visualizer:
         plt.savefig(os.path.join(epoch_save, save_name + '.png'),
                     bbox_inches='tight')
         plt.figure().clear()
-        plt.close(fig)
         plt.cla()
         plt.clf()
+        plt.close(),plt.close(),plt.close()
 
     def plot_loss(self, trn_rec, save_name, title_str=''):
 
@@ -88,6 +88,7 @@ class Visualizer:
         plt.savefig(os.path.join(self.save_dir, save_name + '.png'),
                     bbox_inches='tight')
         plt.figure().clear()
-        plt.close(fig)
         plt.cla()
         plt.clf()
+
+        plt.close(),plt.close(),plt.close()
