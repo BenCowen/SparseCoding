@@ -1,0 +1,119 @@
+#"""
+#Configuration file template.
+#
+#@author Benjamin Cowen
+#@date 7 Feb 2022
+#@contact benjamin.cowen.math@gmail.com
+#"""
+
+# Experiment settings
+experiment-name: celeb-dict-train
+save-dir: &savedir "K:\\SparseCoding\\SCRATCH\\celeb-dict-sgd5"
+device: &device "cuda:0"
+allow-continuation: True
+seed-config:
+  torch-seed: 2322
+  numpy-seed: 2223
+
+tasks:
+  - nickname: SetupDataset
+    class: ReturnObject
+    module: lib.tasks.return_object
+    kwargs:
+      obj_name: &dataset-name dataloaders
+      obj_class: PyTorchDataset
+      obj_module: lib.data_loaders.pytorch_datasets
+      obj_config:
+        data-dir: "K:\\DATASETS\\celeba"
+        device: *device
+        n-loader-workers: 4
+        # TODO: windowing might be pointless... focus on loss fcn applied to recon
+        image-size: 128
+        batch-size: 64
+        post-load-transforms: &postloadtransforms
+          OverlappingPatches:
+            patch-size: 16
+            overlap-percentage: 0.25
+            vectorize: True
+
+  # Decoder
+  - nickname: SetupDecoder
+    class: GenerateModelFromBlocks
+    module: lib.tasks.model_builders
+    kwargs:
+      model_name: &decoder-name decoder
+      blocks:
+        - name: LinDict
+          class: Dictionary
+          module: lib.model_blocks.dictionary
+          kwargs:
+            device: *device
+            data_dim: &data-dim 256
+            code_dim: &code-dim 100
+
+  # Encoder
+  - nickname: SetupEncoder
+    class: GenerateModelFromBlocks
+    module: lib.tasks.model_builders
+    kwargs:
+      model_name: &encoder-name encoder
+      blocks:
+        - name: Fista
+          class: FISTA
+          module: lib.model_blocks.ISTA
+          # Initialize with decoder
+          include-stuff:
+            - kwarg-name: init_dict
+              stuff-name: *decoder-name
+          kwargs:
+            trainable: False
+            device: *device
+            n_iter: 100
+            sparsity_weight: 1
+            data_dim: *data-dim
+            code_dim: *code-dim
+
+  - nickname: TrainDictionary
+    class: DictionaryPatchTrainer
+    module: lib.tasks.dictionary_learning
+    kwargs:
+      # Logistics
+      save_dir: *savedir
+      dataset_name: *dataset-name
+      # Hyperparameters
+      max_epoch: 100
+      batches_per_epoch: 100 # Cut out early
+      # Model pointers
+      encoder_config:
+        stuff-name: *encoder-name
+        scheduler:
+      decoder_config:
+        stuff-name: *decoder-name
+        optimizer-config:
+          class: AdamW
+          kwargs:
+            lr: 0.001
+      # Loss config
+      loss_config:
+        - class: MSE
+          module: lib.model_blocks.custom_loss_functions
+          kwargs:
+            input_keys:
+              - recon
+              - target
+        - class: L1
+          module: lib.model_blocks.custom_loss_functions
+          kwargs:
+            input_keys:
+              - code
+            weight: 2.5
+            batch_norm: True
+      post_load_transforms: *postloadtransforms
+
+
+#  - nickname: TsneViz
+#    class: TsneB4After
+#    module: lib.tasks.tsne_encode
+#    kwargs: {}
+
+

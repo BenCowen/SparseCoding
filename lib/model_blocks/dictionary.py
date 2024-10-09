@@ -7,7 +7,9 @@ Dictionary Class. TO-DO: subclass multi-dict.
 @contact: benjamin.cowen.math@gmail.com
 """
 import torch
+from typing import Dict
 from lib.model_blocks.AlgorithmBlock import AlgorithmBlock
+from lib.model_blocks.custom_batchnorm import InvertibleBatchNorm1d
 
 
 class Dictionary(AlgorithmBlock):
@@ -19,8 +21,8 @@ class Dictionary(AlgorithmBlock):
     """
 
     def __init__(self,
-                 code_dim: int,
-                 data_dim: int,
+                 code_dim: int = 0,
+                 data_dim: int = 0,
                  device: str = 'cpu',
                  non_blocking: bool = True,
                  **kwargs):
@@ -41,7 +43,7 @@ class Dictionary(AlgorithmBlock):
 
     def encode(self, data):
         """ Transpose matrix multiplication """
-        return torch.nn.functional.linear(data, self.decoder.weight.t())
+        return torch.nn.functional.linear(data, self.decoder.weight.transpose(-2, 1))
 
     @property
     def Wd(self):
@@ -79,15 +81,52 @@ class Dictionary(AlgorithmBlock):
         return torch.lobpcg(torch.mm(self.We, self.Wd))[0].item()
 
 
-class Conv2Dictionary(Dictionary):
+class BatchNormDictionary(Dictionary):
     """
-    Same as Dictionary but efficiently implements 1 convolutional layer.
+    Same as Dictionary but with a prepended batchnorm.
     """
 
     def __init__(self, **kwargs):
-        super(Conv2Dictionary, self).__init__(config)
-        self.kernel_size = config['kernel-size']
-        self.conv_config = config['conv-config']
+        super(BatchNormDictionary, self).__init__(**kwargs)
+
+        self.batchnorm = InvertibleBatchNorm1d(self.code_dim)
+
+    def decode(self, codes):
+        # Apply BatchNorm and then Linear layer
+        return self.batchnorm(self.decoder(codes))
+
+    def encode(self, data):
+        # Inverse BatchNorm for encoding
+        return self.batchnorm.inverse(torch.nn.functional.linear(
+            data, self.decoder.weight.transpose(-2, 1)
+        ))
+
+    @torch.no_grad()
+    def normalize_columns(self):
+        """
+        No longer explicitly normalizing.
+        """
+        pass
+
+
+class Conv2Dictionary(Dictionary):
+    """
+    Same as Dictionary but Conv2d instead of Linear.
+    """
+
+    def __init__(self,
+                 kernel_size: int,
+                 conv2d_kwargs: Dict = None,
+                 **kwargs):
+        super(Conv2Dictionary, self).__init__(**kwargs)
+
+        # Assume square if not specified
+        self.kernel_size = kernel_size
+        if len(self.kernel_size) == 1:
+            self.kernel_size = (self.kernel_size, self.kernel_size)
+
+        # Create Conv2d decoder
+        self.conv_config = conv2d_kwargs if conv2d_kwargs else {}
         self.decoder = torch.nn.Conv2d(self.code_dim,
                                        self.data_dim,
                                        self.kernel_size,

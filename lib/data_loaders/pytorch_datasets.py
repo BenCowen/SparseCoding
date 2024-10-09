@@ -10,7 +10,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import lib.UTILS.image_transforms as custom_transforms
-
+import numpy as np
 
 class PyTorchDataset:
     """
@@ -50,12 +50,28 @@ class PyTorchDataset:
             self.data_dir,
             transform=transform_list)
 
-        # Use sampler for randomization
-        training_sampler = torch.utils.data.SubsetRandomSampler(range(len(train_dataset)))
+        # Assume train_dataset is defined and has a certain length
+        dataset_size = len(train_dataset)
+        indices = list(range(dataset_size))
+        split = int(np.floor(self.valid_perc * dataset_size))  # valid_split is the % of the dataset for validation
+
+        # Shuffle the indices
+        np.random.shuffle(indices)
+
+        # Split the indices into training and validation sets
+        train_indices, valid_indices = indices[split:], indices[:split]
+
+        # Define samplers
+        training_sampler = torch.utils.data.SubsetRandomSampler(train_indices)
+        validation_sampler = torch.utils.data.SubsetRandomSampler(valid_indices)
 
         # Prepare Data Loaders for training and validation
         self.train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.batch_size,
                                                         sampler=training_sampler,
+                                                        pin_memory=True, num_workers=self.n_loader_workers)
+
+        self.valid_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.batch_size,
+                                                        sampler=validation_sampler,
                                                         pin_memory=True, num_workers=self.n_loader_workers)
 
         # Set the data size:
@@ -103,3 +119,8 @@ class PyTorchDataset:
             self.n_loader_workers = config['n-loader-workers']
         else:
             self.n_loader_workers = self._default_num_workers
+
+        if 'valid-split' in config:
+            self.valid_perc = config['valid-split']
+        else:
+            self.valid_perc = 0.1

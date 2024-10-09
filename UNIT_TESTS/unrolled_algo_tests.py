@@ -7,10 +7,11 @@ Checks that FISTA converges and gets the right answer on a toy problem
 """
 import os
 import torch
-from lib.model_blocks.dictionary import Dictionary
+from lib.model_blocks.dictionary import Dictionary, Conv2Dictionary
 import lib.UTILS.rng_control as proj_control
 
 
+@torch.no_grad()
 def make_sparse_data(n_samples, data_len, code_len, percent_nonzero,
                      noise_level, signal_level, decoder):
     num_nonzero = round(percent_nonzero * code_len)
@@ -18,14 +19,14 @@ def make_sparse_data(n_samples, data_len, code_len, percent_nonzero,
     nonzeros = torch.randint(0, code_len, (num_nonzero,))
     code_opt[:, nonzeros] = signal_level*(1+torch.randn(n_samples, num_nonzero))
 
-    with torch.no_grad():
-        train_data = decoder(code_opt) + noise_level * torch.randn(n_samples, data_len)
+    decoder.eval()
+    train_data = decoder(code_opt) + noise_level * torch.randn(n_samples, data_len)
     return code_opt, train_data
 
 
 def encoder_loss_mean(loss_hist, n_avg_convergence):
     return ((loss_hist[-1 * n_avg_convergence:] -
-            loss_hist[-1 * (n_avg_convergence + 1):-1]).abs().mean().item()/
+            loss_hist[-1 * (n_avg_convergence + 1):-1]).abs().mean().item() /
             loss_hist[-1 * (n_avg_convergence + 1):-1]).abs().mean().item()
 
 
@@ -33,7 +34,7 @@ def recon_rel_error(opt_codes, est_codes):
     return ((est_codes - opt_codes).pow(2).sum() / opt_codes.pow(2).sum()).detach().item()
 
 
-def encoder_test(encoder_class, encoder_args, test_settings):
+def encoder_test(encoder_class, encoder_args, test_settings, conv=False):
     if test_settings['make_plots']:
         import matplotlib
         import matplotlib.pyplot as plt
@@ -42,7 +43,10 @@ def encoder_test(encoder_class, encoder_args, test_settings):
     proj_control.reproducibility_mode()
 
     # Initialize dictionary first so test signal is reproducible:
-    decoder = Dictionary(**encoder_args)
+    if conv:
+        decoder = Conv2Dictionary(**encoder_args)
+    else:
+        decoder = Dictionary(**encoder_args)
     decoder.normalize_columns()
 
     # Set up training data
