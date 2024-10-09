@@ -130,8 +130,8 @@ if __name__ == "__main__":
         print(f'Input to {name} has shape {z.shape}')
         z = layer(z)
 
-    print(f'final shape: {z.shape}')
-    ff = ELBO()
-    x = torch.ones(5, 3, in_shape, in_shape)
-    ff(x, *f(x))
+    # print(f'final shape: {z.shape}')
+    # ff = ELBO()
+    # x = torch.ones(5, 3, in_shape, in_shape)
+    # ff(x, *f(x))
 
